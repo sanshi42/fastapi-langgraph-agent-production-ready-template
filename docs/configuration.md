@@ -27,7 +27,8 @@ cp .env.example .env.development
 
 | Variable | Default | Required | Description |
 | --- | --- | --- | --- |
-| `OPENAI_API_KEY` | — | Yes | OpenAI API key |
+| `OPENAI_API_KEY` | — | Yes | OpenAI-compatible API key |
+| `OPENAI_BASE_URL` | — | No | Optional OpenAI-compatible endpoint |
 | `DEFAULT_LLM_MODEL` | `gpt-5-mini` | No | Starting model — see [LLM Service](llm-service.md) for fallback order |
 | `DEFAULT_LLM_TEMPERATURE` | `0.2` | No | Temperature for chat completions |
 | `MAX_TOKENS` | `2000` | No | Max tokens per LLM response |

@@ -24,6 +24,8 @@ Valkey is always started but only used by the app when `VALKEY_HOST=valkey` is s
 
 ## Commands
 
+The Makefile uses Docker Compose v2 (`docker compose`) by default. If your machine only has the legacy standalone binary, pass `DOCKER_COMPOSE=docker-compose` to the make command.
+
 ### API + database only (most common for development)
 
 ```bash

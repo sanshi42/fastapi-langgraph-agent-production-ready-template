@@ -20,7 +20,7 @@ Models are defined in `LLMRegistry.LLMS` in order of preference:
 | `gpt-5.4-nano` | gpt-5.4-nano | Fast, low reasoning effort.            |
 | `gpt-5`        | gpt-5        | Full model, production-tuned sampling. |
 
-Set `DEFAULT_LLM_MODEL` in your `.env` to choose the starting model.
+Set `DEFAULT_LLM_MODEL` in your `.env` to choose the starting model. For OpenAI-compatible providers, set `OPENAI_BASE_URL`.
 
 To add or change models, edit `LLMRegistry.LLMS` in `app/services/llm/registry.py`.
 
