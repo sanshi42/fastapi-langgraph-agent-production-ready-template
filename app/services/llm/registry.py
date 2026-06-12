@@ -1,4 +1,4 @@
-"""LLM model registry with pre-initialized instances."""
+"""带预初始化实例的 LLM 模型注册表."""
 
 from typing import (
     Any,
@@ -20,47 +20,50 @@ _TOKEN_LIMIT: Dict[str, Any] = {"max_completion_tokens": settings.MAX_TOKENS}
 _API_KEY = SecretStr(settings.OPENAI_API_KEY)
 
 
-class LLMRegistry:
-    """Registry of available LLM models with pre-initialized instances.
+def _chat_openai_kwargs() -> Dict[str, Any]:
+    """返回共享的 ChatOpenAI 参数."""
+    kwargs: Dict[str, Any] = {
+        "api_key": _API_KEY,
+        "model_kwargs": _TOKEN_LIMIT,
+    }
+    if settings.OPENAI_BASE_URL:
+        kwargs["base_url"] = settings.OPENAI_BASE_URL
+    return kwargs
 
-    This class maintains a list of LLM configurations and provides
-    methods to retrieve them by name with optional argument overrides.
-    """
 
-    LLMS: List[Dict[str, Any]] = [
+def _chat_model(name: str, **kwargs: Any) -> ChatOpenAI:
+    """按项目默认参数创建 ChatOpenAI 模型."""
+    return ChatOpenAI(model=name, **_chat_openai_kwargs(), **kwargs)
+
+
+def _build_llms() -> List[Dict[str, Any]]:
+    """构建模型注册表，并把配置的模型放在首位."""
+    llms: List[Dict[str, Any]] = [
         {
             "name": "gpt-5-mini",
-            "llm": ChatOpenAI(
-                model="gpt-5-mini",
-                api_key=_API_KEY,
-                model_kwargs=_TOKEN_LIMIT,
+            "llm": _chat_model(
+                "gpt-5-mini",
                 reasoning={"effort": "low"},
             ),
         },
         {
             "name": "gpt-5.4",
-            "llm": ChatOpenAI(
-                model="gpt-5",
-                api_key=_API_KEY,
-                model_kwargs=_TOKEN_LIMIT,
+            "llm": _chat_model(
+                "gpt-5",
                 reasoning={"effort": "medium"},
             ),
         },
         {
             "name": "gpt-5.4-nano",
-            "llm": ChatOpenAI(
-                model="gpt-5.4-nano",
-                api_key=_API_KEY,
-                model_kwargs=_TOKEN_LIMIT,
+            "llm": _chat_model(
+                "gpt-5.4-nano",
                 reasoning={"effort": "low"},
             ),
         },
         {
             "name": "gpt-5",
-            "llm": ChatOpenAI(
-                model="gpt-5",
-                api_key=_API_KEY,
-                model_kwargs=_TOKEN_LIMIT,
+            "llm": _chat_model(
+                "gpt-5",
                 top_p=0.95 if settings.ENVIRONMENT == Environment.PRODUCTION else 0.8,
                 presence_penalty=0.1 if settings.ENVIRONMENT == Environment.PRODUCTION else 0.0,
                 frequency_penalty=0.1 if settings.ENVIRONMENT == Environment.PRODUCTION else 0.0,
@@ -68,22 +71,38 @@ class LLMRegistry:
         },
     ]
 
+    configured_model = settings.DEFAULT_LLM_MODEL
+    if configured_model not in {entry["name"] for entry in llms}:
+        llms.insert(0, {"name": configured_model, "llm": _chat_model(configured_model)})
+
+    return llms
+
+
+class LLMRegistry:
+    """可用 LLM 模型注册表，持有预初始化实例.
+
+    该类维护 LLM 配置列表，并提供按名称获取模型的方法；
+    调用方也可以传入参数覆盖默认模型配置。
+    """
+
+    LLMS: List[Dict[str, Any]] = _build_llms()
+
     @classmethod
     def get(cls, model_name: str, **kwargs) -> BaseChatModel:
-        """Get an LLM by name with optional argument overrides.
+        """按名称获取 LLM，并可选覆盖参数.
 
-        When kwargs are provided a fresh ChatOpenAI instance is returned with
-        those overrides applied, leaving the shared registry entry untouched.
+        传入 kwargs 时，会返回应用这些覆盖参数的新 ChatOpenAI 实例，
+        不修改共享注册表条目。
 
         Args:
-            model_name: Name of the model to retrieve.
-            **kwargs: Optional arguments to override default model configuration.
+            model_name: 要获取的模型名称。
+            **kwargs: 覆盖默认模型配置的可选参数。
 
         Returns:
-            BaseChatModel instance.
+            BaseChatModel 实例。
 
         Raises:
-            ValueError: If model_name is not found in LLMS.
+            ValueError: model_name 不在 LLMS 中时抛出。
         """
         model_entry = next((e for e in cls.LLMS if e["name"] == model_name), None)
 
@@ -93,29 +112,29 @@ class LLMRegistry:
 
         if kwargs:
             logger.debug("creating_llm_with_custom_args", model_name=model_name, custom_args=list(kwargs.keys()))
-            return ChatOpenAI(model=model_name, api_key=_API_KEY, **kwargs)
+            return ChatOpenAI(model=model_name, **_chat_openai_kwargs(), **kwargs)
 
         logger.debug("using_default_llm_instance", model_name=model_name)
         return model_entry["llm"]
 
     @classmethod
     def get_all_names(cls) -> List[str]:
-        """Return all registered model names in order.
+        """按顺序返回所有已注册模型名称.
 
         Returns:
-            List of model name strings.
+            模型名称字符串列表。
         """
         return [e["name"] for e in cls.LLMS]
 
     @classmethod
     def get_model_at_index(cls, index: int) -> Dict[str, Any]:
-        """Return the model entry at a specific index, wrapping to 0 if out of range.
+        """返回指定索引的模型条目，越界时回退到 0.
 
         Args:
-            index: Index into LLMS.
+            index: LLMS 中的索引。
 
         Returns:
-            Model entry dict.
+            模型条目字典。
         """
         if 0 <= index < len(cls.LLMS):
             return cls.LLMS[index]

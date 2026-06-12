@@ -21,7 +21,7 @@ services:
     networks:
       - monitoring
 
-  # Valkey (Redis-compatible) cache — optional, set VALKEY_HOST=valkey in your .env to enable
+  # Valkey（Redis-compatible）缓存：可选；在 .env 中设置 VALKEY_HOST=valkey 后启用。
   valkey:
     image: valkey/valkey:8.1.6-alpine
     ports:
@@ -37,7 +37,7 @@ services:
     networks:
       - monitoring
 
-  # Single API service with dynamic environment
+  # 支持动态环境的单个 API 服务。
   app:
     build:
       context: .
@@ -57,7 +57,13 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -66,7 +72,7 @@ services:
     networks:
       - monitoring
 
-  # Prometheus
+  # Prometheus。
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -79,7 +85,7 @@ services:
       - monitoring
     restart: always
 
-  # Grafana
+  # Grafana。
   grafana:
     image: grafana/grafana:latest
     ports:

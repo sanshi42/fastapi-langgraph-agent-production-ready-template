@@ -69,6 +69,7 @@ test = ["httpx>=0.28.1", "pytest>=8.3.5"]
 [tool.pytest.ini_options]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
+pythonpath = ["."]
 
 [tool.black]
 line-length = 119
@@ -80,7 +81,7 @@ ignore = ["D107", "D212", "E501", "W503", "W605", "D203", "D100"]
 exclude = "venv|migrations"
 max-line-length = 119
 
-# radon
+# radon 配置。
 radon-max-cc = 10
 
 [tool.isort]
@@ -109,17 +110,17 @@ line-length = 119
 exclude = ["migrations", "*.ipynb", "venv"]
 
 [tool.ruff.lint]
-# Enable flake8-bugbear (`B`) rules and docstring (`D`) rules
+# 启用 flake8-bugbear（`B`）和 docstring（`D`）规则。
 select = ["E", "F", "B", "ERA", "D"]
-# Never enforce `E501` (line length violations).
+# 不强制 `E501`（行长度违规）。
 ignore = ["E501", "D203", "D213", "B904", "B008"]
-# Avoid trying to fix flake8-bugbear (`B`) violations.
+# 不自动修复 flake8-bugbear（`B`）违规。
 unfixable = ["B"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-# Ignore `E402` (import violations) in all `__init__.py` files
+# 在所有 `__init__.py` 文件中忽略 `E402`（import 位置违规）。
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
 
@@ -136,10 +137,10 @@ stubPath = "typings"
 pythonVersion = "3.13"
 typeCheckingMode = "standard"
 
-# Tightened from defaults — cheap real-bug catchers
+# 比默认配置更严格，用于低成本捕获真实问题。
 reportDuplicateImport = "error"
 reportInvalidTypeVarUse = "error"
 reportSelfClsParameterName = "error"
 
-# Style nudges
+# 风格提示。
 reportImplicitOverride = "warning"

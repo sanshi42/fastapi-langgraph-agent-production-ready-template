@@ -1,4 +1,4 @@
-"""Metrics for evals."""
+"""评测指标加载."""
 
 import os
 

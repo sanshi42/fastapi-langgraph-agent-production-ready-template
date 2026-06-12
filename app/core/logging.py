@@ -1,8 +1,8 @@
-"""Logging configuration and setup for the application.
+"""应用日志配置与初始化.
 
-This module provides structured logging configuration using structlog,
-with environment-specific formatters and handlers. It supports both
-console-friendly development logging and JSON-formatted production logging.
+本模块基于 structlog 提供结构化日志配置，并按环境选择不同 formatter
+和 handler。它同时支持开发环境友好的控制台日志，以及生产环境常用的
+JSON 格式日志。
 """
 
 import json
@@ -27,49 +27,49 @@ from app.core.config import (
     settings,
 )
 
-# Ensure log directory exists
+# 确保日志目录存在。
 settings.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# Context variables for storing request-specific data
+# 存储请求级数据的上下文变量。
 _request_context: ContextVar[Optional[Dict[str, Any]]] = ContextVar("request_context", default=None)
 
 
 def bind_context(**kwargs: Any) -> None:
-    """Bind context variables to the current request.
+    """把上下文字段绑定到当前请求.
 
     Args:
-        **kwargs: Key-value pairs to bind to the logging context
+        **kwargs: 要绑定到日志上下文的键值对。
     """
     current = _request_context.get() or {}
     _request_context.set({**current, **kwargs})
 
 
 def clear_context() -> None:
-    """Clear all context variables for the current request."""
+    """清理当前请求的所有上下文字段."""
     _request_context.set(None)
 
 
 def get_context() -> Dict[str, Any]:
-    """Get the current logging context.
+    """获取当前日志上下文.
 
     Returns:
-        Dict[str, Any]: Current context dictionary
+        Dict[str, Any]: 当前上下文字典。
     """
     return _request_context.get() or {}
 
 
 def add_context_to_event_dict(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Add context variables to the event dictionary.
+    """把上下文字段加入 event dictionary.
 
-    This processor adds any bound context variables to each log event.
+    该 processor 会把已绑定的上下文字段追加到每条日志事件中。
 
     Args:
-        logger: The logger instance
-        method_name: The name of the logging method
-        event_dict: The event dictionary to modify
+        logger: logger 实例。
+        method_name: 日志方法名。
+        event_dict: 待修改的 event dictionary。
 
     Returns:
-        Dict[str, Any]: Modified event dictionary with context variables
+        Dict[str, Any]: 加入上下文字段后的 event dictionary。
     """
     context = get_context()
     if context:
@@ -78,15 +78,15 @@ def add_context_to_event_dict(logger: Any, method_name: str, event_dict: Dict[st
 
 
 def add_request_id_to_event_dict(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Add the current request_id (from asgi-correlation-id) to every log event.
+    """把当前 request_id（来自 asgi-correlation-id）加入每条日志事件.
 
     Args:
-        logger: The logger instance
-        method_name: The name of the logging method
-        event_dict: The event dictionary to modify
+        logger: logger 实例。
+        method_name: 日志方法名。
+        event_dict: 待修改的 event dictionary。
 
     Returns:
-        Dict[str, Any]: Modified event dictionary with request_id
+        Dict[str, Any]: 加入 request_id 后的 event dictionary。
     """
     request_id = correlation_id.get()
     if request_id:
@@ -95,30 +95,30 @@ def add_request_id_to_event_dict(logger: Any, method_name: str, event_dict: Dict
 
 
 def get_log_file_path() -> Path:
-    """Get the current log file path based on date and environment.
+    """根据日期和环境获取当前日志文件路径.
 
     Returns:
-        Path: The path to the log file
+        Path: 日志文件路径。
     """
     env_prefix = settings.ENVIRONMENT.value
     return settings.LOG_DIR / f"{env_prefix}-{datetime.now().strftime('%Y-%m-%d')}.jsonl"
 
 
 class JsonlFileHandler(logging.Handler):
-    """Custom handler for writing JSONL logs to daily files."""
+    """将 JSONL 日志写入每日文件的自定义 handler."""
 
     def __init__(self, file_path: Path):
-        """Initialize the JSONL file handler.
+        """初始化 JSONL 文件 handler.
 
         Args:
-            file_path: Path to the log file where entries will be written.
+            file_path: 日志条目要写入的文件路径。
         """
         super().__init__()
         self.file_path = file_path
 
     @override
     def emit(self, record: logging.LogRecord) -> None:
-        """Emit a record to the JSONL file."""
+        """把一条日志记录写入 JSONL 文件."""
         try:
             log_entry = {
                 "timestamp": datetime.fromtimestamp(record.created).isoformat(),
@@ -141,20 +141,20 @@ class JsonlFileHandler(logging.Handler):
 
     @override
     def close(self) -> None:
-        """Close the handler."""
+        """关闭 handler."""
         super().close()
 
 
 def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
-    """Get the structlog processors based on configuration.
+    """根据配置获取 structlog processors.
 
     Args:
-        include_file_info: Whether to include file information in the logs
+        include_file_info: 是否在日志中包含文件位置信息。
 
     Returns:
-        List[Any]: List of structlog processors
+        List[Any]: structlog processors 列表。
     """
-    # Set up processors that are common to both outputs
+    # 设置两种输出格式共享的 processors。
     processors = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
@@ -164,13 +164,13 @@ def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
         structlog.processors.UnicodeDecoder(),
-        # Add context variables (user_id, session_id, etc.) to all log events
+        # 把上下文字段（user_id、session_id 等）加入所有日志事件。
         add_context_to_event_dict,
-        # Add request_id from asgi-correlation-id to all log events
+        # 把 asgi-correlation-id 提供的 request_id 加入所有日志事件。
         add_request_id_to_event_dict,
     ]
 
-    # Add callsite parameters if file info is requested
+    # 需要文件信息时加入调用位置参数。
     if include_file_info:
         processors.append(
             structlog.processors.CallsiteParameterAdder(
@@ -184,49 +184,48 @@ def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
             )
         )
 
-    # Add environment info
+    # 加入环境信息。
     processors.append(lambda _, __, event_dict: {**event_dict, "environment": settings.ENVIRONMENT.value})
 
     return processors
 
 
 def setup_logging() -> None:
-    """Configure structlog with different formatters based on environment.
+    """按环境使用不同 formatter 配置 structlog.
 
-    In development: pretty console output
-    In staging/production: structured JSON logs
+    开发环境使用更易读的控制台输出；staging/production 使用结构化 JSON 日志。
     """
-    # Determine log level based on DEBUG setting
+    # 根据 DEBUG 设置决定日志级别。
     log_level = logging.DEBUG if settings.DEBUG else logging.INFO
 
-    # Create file handler for JSON logs
+    # 创建 JSON 日志文件 handler。
     file_handler = JsonlFileHandler(get_log_file_path())
     file_handler.setLevel(log_level)
 
-    # Create console handler
+    # 创建控制台 handler。
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
 
-    # Get shared processors
+    # 获取共享 processors。
     shared_processors = get_structlog_processors(
-        # Include detailed file info only in development and test
+        # 只在 development 和 test 环境包含详细文件信息。
         include_file_info=settings.ENVIRONMENT in [Environment.DEVELOPMENT, Environment.TEST]
     )
 
-    # Configure standard logging
+    # 配置标准 logging。
     logging.basicConfig(
         format="%(message)s",
         level=log_level,
         handlers=[file_handler, console_handler],
     )
 
-    # Configure structlog based on environment
+    # 根据环境配置 structlog。
     if settings.LOG_FORMAT == "console":
-        # Development-friendly console logging
+        # 开发环境友好的控制台日志。
         structlog.configure(
             processors=[
                 *shared_processors,
-                # Use ConsoleRenderer for pretty output to the console
+                # 使用 ConsoleRenderer 输出更易读的控制台日志。
                 structlog.dev.ConsoleRenderer(),
             ],
             wrapper_class=structlog.stdlib.BoundLogger,
@@ -234,7 +233,7 @@ def setup_logging() -> None:
             cache_logger_on_first_use=True,
         )
     else:
-        # Production JSON logging
+        # 生产环境 JSON 日志。
         structlog.configure(
             processors=[
                 *shared_processors,
@@ -246,10 +245,10 @@ def setup_logging() -> None:
         )
 
 
-# Initialize logging
+# 初始化日志。
 setup_logging()
 
-# Create logger instance
+# 创建 logger 实例。
 logger = structlog.get_logger()
 log_level_name = "DEBUG" if settings.DEBUG else "INFO"
 logger.info(

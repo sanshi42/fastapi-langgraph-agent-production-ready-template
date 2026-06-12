@@ -1,117 +1,117 @@
 #!/bin/bash
 
-# Script to set and manage environment configuration
-# Usage: source ./scripts/set_env.sh [development|staging|production]
+# 设置和管理环境配置的脚本。
+# 用法：source ./scripts/set_env.sh [development|staging|production]
 
-# Check if the script is being sourced
+# 检查脚本是否通过 source 加载。
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Error: This script must be sourced, not executed."
-    echo "Usage: source ./scripts/set_env.sh [development|staging|production]"
+    echo "错误：这个脚本必须通过 source 加载，不能直接执行。"
+    echo "用法：source ./scripts/set_env.sh [development|staging|production]"
     exit 1
 fi
 
-# Define color codes for output
+# 定义输出颜色。
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 PURPLE='\033[0;35m'
-NC='\033[0m' # No Color
+NC='\033[0m' # 无颜色。
 
-# Default environment is development
+# 默认环境为 development。
 ENV=${1:-development}
 
-# Validate environment
+# 校验环境名称。
 if [[ ! "$ENV" =~ ^(development|staging|production)$ ]]; then
-    echo -e "${RED}Error: Invalid environment. Choose development, staging, or production.${NC}"
+    echo -e "${RED}错误：环境无效。请选择 development、staging 或 production。${NC}"
     return 1
 fi
 
-# Set environment variables
+# 设置环境变量。
 export APP_ENV=$ENV
 
-# Get script directory and project root
-# Using a simpler approach that works for most shells when sourced
+# 获取脚本目录和项目根目录。
+# 使用较简单的写法，适配大多数 source 场景下的 shell。
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Check for environment-specific .env file
+# 检查当前环境对应的 .env 文件。
 ENV_FILE="$PROJECT_ROOT/.env.$ENV"
 
 if [ -f "$ENV_FILE" ]; then
-    echo -e "${GREEN}Loading environment from $ENV_FILE${NC}"
+    echo -e "${GREEN}正在从 $ENV_FILE 加载环境配置${NC}"
 
-    # Export all environment variables from the file
+    # 导出文件中的所有环境变量。
     set -a
     source "$ENV_FILE"
     set +a
 
-    echo -e "${GREEN}Successfully loaded environment variables from $ENV_FILE${NC}"
+    echo -e "${GREEN}已从 $ENV_FILE 成功加载环境变量${NC}"
 else
-    echo -e "${YELLOW}Warning: $ENV_FILE not found. Creating from .env.example...${NC}"
+    echo -e "${YELLOW}警告：未找到 $ENV_FILE，正在从 .env.example 创建...${NC}"
 
     EXAMPLE_FILE="$PROJECT_ROOT/.env.example"
     if [ -f "$EXAMPLE_FILE" ]; then
         cp "$EXAMPLE_FILE" "$ENV_FILE"
-        echo -e "${GREEN}Created $ENV_FILE from template.${NC}"
-        echo -e "${PURPLE}Please update it with your configuration.${NC}"
+        echo -e "${GREEN}已根据模板创建 $ENV_FILE。${NC}"
+        echo -e "${PURPLE}请根据你的环境更新其中配置。${NC}"
 
-        # Export all environment variables from the new file
+        # 导出新文件中的所有环境变量。
         set -a
         source "$ENV_FILE"
         set +a
 
-        echo -e "${GREEN}Successfully loaded environment variables from new $ENV_FILE${NC}"
+        echo -e "${GREEN}已从新的 $ENV_FILE 成功加载环境变量${NC}"
     else
-        echo -e "${RED}Error: .env.example not found at $EXAMPLE_FILE${NC}"
+        echo -e "${RED}错误：在 $EXAMPLE_FILE 未找到 .env.example${NC}"
         return 1
     fi
 fi
 
-# Print current environment
-echo -e "\n${GREEN}======= ENVIRONMENT SUMMARY =======${NC}"
-echo -e "${GREEN}Environment:     ${YELLOW}$ENV${NC}"
-echo -e "${GREEN}Project root:    ${YELLOW}$PROJECT_ROOT${NC}"
-echo -e "${GREEN}Project name:    ${YELLOW}${PROJECT_NAME:-Not set}${NC}"
-echo -e "${GREEN}API version:     ${YELLOW}${VERSION:-Not set}${NC}"
+# 打印当前环境摘要。
+echo -e "\n${GREEN}======= 环境摘要 =======${NC}"
+echo -e "${GREEN}环境:           ${YELLOW}$ENV${NC}"
+echo -e "${GREEN}项目根目录:     ${YELLOW}$PROJECT_ROOT${NC}"
+echo -e "${GREEN}项目名称:       ${YELLOW}${PROJECT_NAME:-未设置}${NC}"
+echo -e "${GREEN}API 版本:       ${YELLOW}${VERSION:-未设置}${NC}"
 
-echo -e "${GREEN}Database host:   ${YELLOW}${POSTGRES_HOST:-${DB_HOST:-Not set}}${NC}"
-echo -e "${GREEN}Database port:   ${YELLOW}${POSTGRES_PORT:-${DB_PORT:-Not set}}${NC}"
-echo -e "${GREEN}Database name:   ${YELLOW}${POSTGRES_DB:-${DB_NAME:-Not set}}${NC}"
-echo -e "${GREEN}Database user:   ${YELLOW}${POSTGRES_USER:-${DB_USER:-Not set}}${NC}"
+echo -e "${GREEN}数据库主机:     ${YELLOW}${POSTGRES_HOST:-${DB_HOST:-未设置}}${NC}"
+echo -e "${GREEN}数据库端口:     ${YELLOW}${POSTGRES_PORT:-${DB_PORT:-未设置}}${NC}"
+echo -e "${GREEN}数据库名称:     ${YELLOW}${POSTGRES_DB:-${DB_NAME:-未设置}}${NC}"
+echo -e "${GREEN}数据库用户:     ${YELLOW}${POSTGRES_USER:-${DB_USER:-未设置}}${NC}"
 
-echo -e "${GREEN}LLM model:       ${YELLOW}${DEFAULT_LLM_MODEL:-Not set}${NC}"
-echo -e "${GREEN}Log level:       ${YELLOW}${LOG_LEVEL:-Not set}${NC}"
-echo -e "${GREEN}Debug mode:      ${YELLOW}${DEBUG:-Not set}${NC}"
+echo -e "${GREEN}LLM 模型:       ${YELLOW}${DEFAULT_LLM_MODEL:-未设置}${NC}"
+echo -e "${GREEN}日志级别:       ${YELLOW}${LOG_LEVEL:-未设置}${NC}"
+echo -e "${GREEN}Debug 模式:     ${YELLOW}${DEBUG:-未设置}${NC}"
 
-# Create helper functions
+# 创建辅助函数。
 start_app() {
-    echo -e "${GREEN}Starting application in $ENV environment...${NC}"
+    echo -e "${GREEN}正在以 $ENV 环境启动应用...${NC}"
     cd "$PROJECT_ROOT" && uvicorn app.main:app --reload --port 8000
 }
 
-# Define the function for use in the shell (handle both bash and zsh)
+# 定义可在 shell 中使用的函数，同时处理 bash 和 zsh。
 if [[ -n "$BASH_VERSION" ]]; then
     export -f start_app
 elif [[ -n "$ZSH_VERSION" ]]; then
-    # For ZSH, we redefine the function (no export -f)
+    # ZSH 中重新定义函数，不使用 export -f。
     function start_app() {
-        echo -e "${GREEN}Starting application in $ENV environment...${NC}"
+        echo -e "${GREEN}正在以 $ENV 环境启动应用...${NC}"
         cd "$PROJECT_ROOT" && uvicorn app.main:app --reload --port 8000
     }
 else
-    echo -e "${YELLOW}Warning: Unsupported shell. Using fallback method.${NC}"
-    # No function export for other shells
+    echo -e "${YELLOW}警告：不支持的 shell，将使用 fallback 方式。${NC}"
+    # 其他 shell 不导出函数。
 fi
 
-# Print help message
-echo -e "\n${GREEN}Available commands:${NC}"
-echo -e "  ${YELLOW}start_app${NC} - Start the application in $ENV environment"
+# 打印帮助信息。
+echo -e "\n${GREEN}可用命令:${NC}"
+echo -e "  ${YELLOW}start_app${NC} - 以 $ENV 环境启动应用"
 
-# Create aliases for environments
+# 创建环境切换 aliases。
 alias dev_env="source '$SCRIPT_DIR/set_env.sh' development"
 alias stage_env="source '$SCRIPT_DIR/set_env.sh' staging"
 alias prod_env="source '$SCRIPT_DIR/set_env.sh' production"
 
-echo -e "  ${YELLOW}dev_env${NC} - Switch to development environment"
-echo -e "  ${YELLOW}stage_env${NC} - Switch to staging environment"
-echo -e "  ${YELLOW}prod_env${NC} - Switch to production environment"
+echo -e "  ${YELLOW}dev_env${NC} - 切换到 development 环境"
+echo -e "  ${YELLOW}stage_env${NC} - 切换到 staging 环境"
+echo -e "  ${YELLOW}prod_env${NC} - 切换到 production 环境"
