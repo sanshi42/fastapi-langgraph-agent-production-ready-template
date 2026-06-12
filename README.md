@@ -77,15 +77,15 @@ docker compose --env-file .env.development exec app uv run alembic upgrade head
 
 | 文档 | 内容 |
 | --- | --- |
-| [Getting Started](docs/getting-started.md) | 从零启动、配置 `.env`、第一次 API 调用、常见问题。 |
-| [Architecture](docs/architecture.md) | 系统结构、请求流、关键组件。 |
-| [Configuration](docs/configuration.md) | 所有环境变量和默认值。 |
-| [Authentication](docs/authentication.md) | JWT、用户、session 和认证接口。 |
-| [Database & Migrations](docs/database.md) | 数据库 schema、Alembic、pgvector。 |
+| [快速开始](docs/getting-started.md) | 从零启动、配置 `.env`、第一次 API 调用、常见问题。 |
+| [架构](docs/architecture.md) | 系统结构、请求流、关键组件。 |
+| [配置](docs/configuration.md) | 所有环境变量和默认值。 |
+| [认证](docs/authentication.md) | JWT、用户、session 和认证接口。 |
+| [数据库与迁移](docs/database.md) | 数据库 schema、Alembic、pgvector。 |
 | [LLM Service](docs/llm-service.md) | 模型注册、重试、fallback、超时预算。 |
-| [Memory](docs/memory.md) | mem0 长期记忆和缓存层。 |
-| [Observability](docs/observability.md) | Langfuse、Prometheus、Grafana、日志和 profiling。 |
-| [Evaluation](docs/evaluation.md) | LLM eval 框架、自定义指标、报告。 |
+| [记忆](docs/memory.md) | mem0 长期记忆和缓存层。 |
+| [可观测性](docs/observability.md) | Langfuse、Prometheus、Grafana、日志和 profiling。 |
+| [评测](docs/evaluation.md) | LLM eval 框架、自定义指标、报告。 |
 | [Docker](docs/docker.md) | Docker Compose 服务、完整监控栈、Grafana。 |
 
 ## 项目结构
@@ -175,10 +175,10 @@ make docker-logs
 
 ## 贡献
 
-开发前先按 [Getting Started](docs/getting-started.md) 跑通环境，再遵守 [AGENTS.md](AGENTS.md) 中的代码和协作约定。
+开发前先按 [快速开始](docs/getting-started.md) 跑通环境，再遵守 [AGENTS.md](AGENTS.md) 中的代码和协作约定。
 
 安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 
-## License
+## 许可证
 
-See [LICENSE](LICENSE).
+见 [LICENSE](LICENSE)。

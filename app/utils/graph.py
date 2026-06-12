@@ -1,4 +1,4 @@
-"""This file contains the graph utilities for the application."""
+"""应用 graph 工具函数."""
 
 import tiktoken
 from langchain_core.messages import BaseMessage
@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.schemas import Message
 
-# Cache tiktoken encoding at module level — thread-safe and reusable
+# 在模块级缓存 tiktoken encoding，线程安全且可复用。
 try:
     _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(settings.DEFAULT_LLM_MODEL)
 except KeyError:
@@ -16,10 +16,10 @@ except KeyError:
 
 
 def _count_tokens_tiktoken(messages: list) -> int:
-    """Count tokens locally using tiktoken — no API call needed."""
+    """使用 tiktoken 在本地统计 token，无需 API 调用."""
     num_tokens = 0
     for message in messages:
-        # Every message has overhead tokens for role/name
+        # 每条消息都有 role/name 相关的额外 token。
         num_tokens += 4
         if isinstance(message, dict):
             for _, value in message.items():
@@ -35,34 +35,33 @@ def _count_tokens_tiktoken(messages: list) -> int:
                         num_tokens += len(_TIKTOKEN_ENCODING.encode(block))
                     elif isinstance(block, dict) and "text" in block:
                         num_tokens += len(_TIKTOKEN_ENCODING.encode(block["text"]))
-    num_tokens += 2  # every reply is primed with assistant
+    num_tokens += 2  # 每个回复都会预置 assistant。
     return num_tokens
 
 
 def dump_messages(messages: list[Message]) -> list[dict]:
-    """Dump the messages to a list of dictionaries.
+    """把消息序列化为字典列表.
 
     Args:
-        messages (list[Message]): The messages to dump.
+        messages (list[Message]): 待序列化消息。
 
     Returns:
-        list[dict]: The dumped messages.
+        list[dict]: 序列化后的消息。
     """
     return [message.model_dump() for message in messages]
 
 
 def extract_text_content(content: str | list) -> str:
-    """Extract plain text from an LLM content value.
+    """从 LLM content 值中提取纯文本.
 
-    Handles both the simple string format and the structured block list returned
-    by GPT-5 / Responses API models:
+    同时处理简单字符串格式，以及 GPT-5 / Responses API 模型返回的结构化块列表：
         [{'type': 'reasoning', ...}, {'type': 'text', 'text': '...'}]
 
     Args:
-        content: Raw content from a LangChain BaseMessage.
+        content: 来自 LangChain BaseMessage 的原始 content。
 
     Returns:
-        Plain text string (empty string when nothing extractable is present).
+        纯文本字符串；没有可提取内容时返回空字符串。
     """
     if isinstance(content, str):
         return content
@@ -84,13 +83,13 @@ def extract_text_content(content: str | list) -> str:
 
 
 def process_llm_response(response: BaseMessage) -> BaseMessage:
-    """Normalise a raw LLM response so that ``response.content`` is always a plain string, regardless of the provider's content format.
+    """规范化原始 LLM 响应，确保 ``response.content`` 始终是纯字符串.
 
     Args:
-        response: The raw response from the LLM.
+        response: LLM 返回的原始响应。
 
     Returns:
-        The same BaseMessage instance with ``content`` set to a plain string.
+        同一个 BaseMessage 实例，但 ``content`` 已设置为纯字符串。
     """
     if isinstance(response.content, list):
         response.content = extract_text_content(response.content)
@@ -103,14 +102,14 @@ def process_llm_response(response: BaseMessage) -> BaseMessage:
 
 
 def prepare_messages(messages: list[Message], system_prompt: str) -> list[Message]:
-    """Prepare the messages for the LLM.
+    """为 LLM 准备消息列表.
 
     Args:
-        messages (list[Message]): The messages to prepare.
-        system_prompt (str): The system prompt to use.
+        messages (list[Message]): 待准备消息。
+        system_prompt (str): 要使用的 system prompt。
 
     Returns:
-        list[Message]: The prepared messages.
+        list[Message]: 准备好的消息列表。
     """
     try:
         trimmed_messages = _trim_messages(
@@ -123,14 +122,14 @@ def prepare_messages(messages: list[Message], system_prompt: str) -> list[Messag
             allow_partial=False,
         )
     except ValueError as e:
-        # Handle unrecognized content blocks (e.g., reasoning blocks from GPT-5)
+        # 处理无法识别的内容块，例如 GPT-5 reasoning blocks。
         if "Unrecognized content block type" in str(e):
             logger.warning(
                 "token_counting_failed_skipping_trim",
                 error=str(e),
                 message_count=len(messages),
             )
-            # Skip trimming and return all messages
+            # 跳过裁剪，返回全部消息。
             trimmed_messages = messages
         else:
             raise

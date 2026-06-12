@@ -1,4 +1,4 @@
-"""LLM service with retries, circular fallback, and optional structured output."""
+"""带重试、循环降级和可选结构化输出的 LLM 服务."""
 
 import asyncio
 import logging
@@ -38,22 +38,21 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class LLMService:
-    """Service for managing LLM calls with retries and circular fallback.
+    """管理 LLM 调用、重试和循环降级的服务.
 
-    Two distinct execution paths:
+    这里区分两条执行路径：
 
-    - **Default path** (no model_name / response_format / model_kwargs): uses
-      ``self._llm`` which is the tool-bound agent model. Circular fallback
-      updates ``self._llm`` so tool bindings are preserved across retries.
+    - **默认路径**（不传 model_name / response_format / model_kwargs）：使用
+      ``self._llm``，也就是已经绑定工具的 Agent 模型。循环降级会更新
+      ``self._llm``，确保重试切换模型后工具绑定仍然保留。
 
-    - **One-off path** (any override provided): resolves a fresh, local
-      ``Runnable`` for the call without ever touching ``self._llm``, so
-      concurrent default-path calls are never affected.
+    - **一次性路径**（传入任意覆盖项）：为本次调用创建新的本地 ``Runnable``，
+      不修改 ``self._llm``，因此不会影响并发中的默认路径调用。
     """
 
     def __init__(self):
-        """Initialize the LLM service with the configured default model."""
-        self._llm: Any = None  # BaseChatModel pre-bind_tools, Runnable after
+        """使用配置中的默认模型初始化 LLM 服务."""
+        self._llm: Any = None  # bind_tools 前是 BaseChatModel，之后是 Runnable。
         self._current_model_index: int = 0
         self._bound_tools: List = []
 
@@ -79,7 +78,7 @@ class LLMService:
             )
 
     # ------------------------------------------------------------------
-    # Public API
+    # 公共 API
     # ------------------------------------------------------------------
 
     @overload
@@ -108,26 +107,23 @@ class LLMService:
         response_format: Optional[Type[BaseModel]] = None,
         **model_kwargs: Any,
     ) -> Union[BaseMessage, BaseModel]:
-        """Call the LLM with retries and circular fallback.
+        """调用 LLM，并在失败时执行重试和循环降级.
 
         Args:
-            messages: Conversation messages to send.
-            model_name: Override the model. ``None`` uses the current default.
-            response_format: Pydantic schema for structured output. When
-                provided the call chains ``.with_structured_output(schema)``
-                and returns a validated instance of that schema instead of a
-                raw ``BaseMessage``.
-            **model_kwargs: Extra kwargs forwarded to ``LLMRegistry.get`` when
-                constructing a one-off model instance (e.g. ``temperature``,
-                ``max_tokens``, ``reasoning``).
+            messages: 要发送的对话消息。
+            model_name: 覆盖模型名称；``None`` 表示使用当前默认模型。
+            response_format: 用于结构化输出的 Pydantic schema。传入后会串接
+                ``.with_structured_output(schema)``，返回该 schema 的校验实例，
+                而不是原始 ``BaseMessage``。
+            **model_kwargs: 创建一次性模型实例时转发给 ``LLMRegistry.get`` 的
+                额外参数，例如 ``temperature``、``max_tokens``、``reasoning``。
 
         Returns:
-            ``BaseMessage`` when ``response_format`` is ``None``, otherwise a
-            validated instance of ``response_format``.
+            ``response_format`` 为 ``None`` 时返回 ``BaseMessage``，
+            否则返回 ``response_format`` 的校验实例。
 
         Raises:
-            RuntimeError: When all models fail after retries or the total
-                timeout budget is exceeded.
+            RuntimeError: 所有模型重试后仍失败，或超过总超时预算。
         """
         try:
             return await asyncio.wait_for(
@@ -142,21 +138,21 @@ class LLMService:
             raise RuntimeError(f"llm call timed out after {settings.LLM_TOTAL_TIMEOUT}s total budget")
 
     def get_llm(self) -> Any:
-        """Return the current tool-bound default LLM instance.
+        """返回当前已绑定工具的默认 LLM 实例.
 
         Returns:
-            Current ``BaseChatModel`` instance or ``None`` if not initialised.
+            当前 ``BaseChatModel`` 实例；尚未初始化时返回 ``None``。
         """
         return self._llm
 
     def bind_tools(self, tools: List) -> "LLMService":
-        """Bind tools to the default LLM instance.
+        """把工具绑定到默认 LLM 实例.
 
         Args:
-            tools: List of tools to bind.
+            tools: 要绑定的工具列表。
 
         Returns:
-            Self for method chaining.
+            返回自身，便于链式调用。
         """
         if self._llm:
             self._bound_tools = tools
@@ -165,7 +161,7 @@ class LLMService:
         return self
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # 内部辅助方法
     # ------------------------------------------------------------------
 
     @retry(
@@ -176,17 +172,17 @@ class LLMService:
         reraise=True,
     )
     async def _invoke_with_retry(self, llm: Any, messages: LanguageModelInput) -> Any:
-        """Invoke an LLM runnable with automatic per-model retry logic.
+        """调用 LLM runnable，并对单个模型应用自动重试.
 
         Args:
-            llm: Any LangChain ``Runnable`` (plain model or structured-output chain).
-            messages: Messages to send.
+            llm: 任意 LangChain ``Runnable``，可以是普通模型或结构化输出链。
+            messages: 要发送的消息。
 
         Returns:
-            The runnable's response (``BaseMessage`` or a ``BaseModel`` instance).
+            runnable 的响应，可能是 ``BaseMessage`` 或 ``BaseModel`` 实例。
 
         Raises:
-            OpenAIError: Propagated after all retry attempts are exhausted.
+            OpenAIError: 所有重试耗尽后继续抛出。
         """
         try:
             response = await llm.ainvoke(messages)
@@ -209,13 +205,13 @@ class LLMService:
             raise
 
     def _switch_to_next_model(self) -> bool:
-        """Advance the default model to the next entry in the registry (circular).
+        """把默认模型切换到注册表中的下一个模型（循环）.
 
-        Mutates ``self._llm`` and ``self._current_model_index`` so tool bindings
-        survive model switches on the default agent path.
+        该方法会修改 ``self._llm`` 和 ``self._current_model_index``，
+        确保默认 Agent 路径切换模型后仍保留工具绑定。
 
         Returns:
-            ``True`` on success, ``False`` if the switch failed.
+            切换成功返回 ``True``，失败返回 ``False``。
         """
         try:
             next_index = (self._current_model_index + 1) % len(LLMRegistry.LLMS)
@@ -243,15 +239,15 @@ class LLMService:
         response_format: Optional[Type[BaseModel]],
         model_kwargs: dict,
     ) -> Union[BaseMessage, BaseModel]:
-        """Build path-specific strategies and delegate to the shared fallback loop.
+        """构建不同路径的策略，并委托给共享降级循环.
 
-        One-off path (any override set):
-            ``get_target`` builds a fresh registry instance each attempt.
-            ``advance`` increments a local index — ``self._llm`` is never touched.
+        一次性路径（传入任意覆盖项）：
+            ``get_target`` 每次尝试都会创建新的注册表实例。
+            ``advance`` 只推进局部索引，不触碰 ``self._llm``。
 
-        Default path (no overrides):
-            ``get_target`` returns ``self._llm`` (tool-bound).
-            ``advance`` calls ``_switch_to_next_model`` so bindings persist.
+        默认路径（没有覆盖项）：
+            ``get_target`` 返回已绑定工具的 ``self._llm``。
+            ``advance`` 调用 ``_switch_to_next_model``，确保绑定持续生效。
         """
 
         def _override_target(idx: int) -> Any:
@@ -294,19 +290,19 @@ class LLMService:
         get_target: Callable[[int], Any],
         advance: Callable[[int], Optional[int]],
     ) -> Any:
-        """Shared fallback loop — try each model in turn until one succeeds.
+        """共享降级循环：依次尝试模型，直到某个模型成功.
 
         Args:
-            messages: Messages to send.
-            start: Registry index to begin from.
-            get_target: Returns the ``Runnable`` to invoke for a given index.
-            advance: Returns the next index to try, or ``None`` to stop.
+            messages: 要发送的消息。
+            start: 起始注册表索引。
+            get_target: 根据索引返回要调用的 ``Runnable``。
+            advance: 返回下一个要尝试的索引；返回 ``None`` 表示停止。
 
         Returns:
-            The first successful response.
+            第一个成功响应。
 
         Raises:
-            RuntimeError: When all models have been exhausted.
+            RuntimeError: 所有模型都尝试失败。
         """
         total = len(LLMRegistry.LLMS)
         current = start

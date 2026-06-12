@@ -1,7 +1,6 @@
-"""Alembic environment configuration.
+"""Alembic 环境配置.
 
-Loads the database URL from the application's settings so migrations
-stay in sync with the running app configuration.
+从应用配置中加载数据库 URL，确保迁移配置和运行时应用配置保持一致。
 """
 
 from logging.config import fileConfig
@@ -15,25 +14,24 @@ from app.models.session import Session  # noqa: F401
 from app.models.thread import Thread  # noqa: F401
 from app.models.user import User  # noqa: F401
 
-# Alembic Config object
+# Alembic Config 对象。
 config = context.config
 
-# Set up Python logging from the ini file
+# 从 ini 文件设置 Python logging。
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Build the database URL from app settings
+# 根据应用配置构建数据库 URL。
 DATABASE_URL = (
     f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
     f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 )
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
-# Point Alembic at our SQLModel metadata for autogenerate support
+# 指向 SQLModel metadata，以支持 Alembic autogenerate。
 target_metadata = SQLModel.metadata
 
-# Tables managed by external systems (LangGraph checkpointer, mem0, pgvector)
-# that Alembic should never touch.
+# 外部系统管理的表（LangGraph checkpointer、mem0、pgvector），Alembic 不应改动。
 EXCLUDE_TABLES = {
     "checkpoint_blobs",
     "checkpoint_writes",
@@ -45,16 +43,16 @@ EXCLUDE_TABLES = {
 
 
 def include_object(object, name, type_, reflected, compare_to):
-    """Filter out tables managed by external systems."""
+    """过滤外部系统管理的表."""
     if type_ == "table" and name in EXCLUDE_TABLES:
         return False
     return True
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
+    """以 offline 模式运行迁移.
 
-    Emits SQL to stdout instead of executing against the database.
+    只把 SQL 输出到 stdout，不直接在数据库中执行。
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -70,9 +68,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+    """以 online 模式运行迁移.
 
-    Creates an engine and runs migrations against the live database.
+    创建 engine，并在真实数据库上执行迁移。
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),

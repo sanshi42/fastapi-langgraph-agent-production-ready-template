@@ -1,4 +1,4 @@
-"""LLM model registry with pre-initialized instances."""
+"""带预初始化实例的 LLM 模型注册表."""
 
 from typing import (
     Any,
@@ -79,30 +79,30 @@ def _build_llms() -> List[Dict[str, Any]]:
 
 
 class LLMRegistry:
-    """Registry of available LLM models with pre-initialized instances.
+    """可用 LLM 模型注册表，持有预初始化实例.
 
-    This class maintains a list of LLM configurations and provides
-    methods to retrieve them by name with optional argument overrides.
+    该类维护 LLM 配置列表，并提供按名称获取模型的方法；
+    调用方也可以传入参数覆盖默认模型配置。
     """
 
     LLMS: List[Dict[str, Any]] = _build_llms()
 
     @classmethod
     def get(cls, model_name: str, **kwargs) -> BaseChatModel:
-        """Get an LLM by name with optional argument overrides.
+        """按名称获取 LLM，并可选覆盖参数.
 
-        When kwargs are provided a fresh ChatOpenAI instance is returned with
-        those overrides applied, leaving the shared registry entry untouched.
+        传入 kwargs 时，会返回应用这些覆盖参数的新 ChatOpenAI 实例，
+        不修改共享注册表条目。
 
         Args:
-            model_name: Name of the model to retrieve.
-            **kwargs: Optional arguments to override default model configuration.
+            model_name: 要获取的模型名称。
+            **kwargs: 覆盖默认模型配置的可选参数。
 
         Returns:
-            BaseChatModel instance.
+            BaseChatModel 实例。
 
         Raises:
-            ValueError: If model_name is not found in LLMS.
+            ValueError: model_name 不在 LLMS 中时抛出。
         """
         model_entry = next((e for e in cls.LLMS if e["name"] == model_name), None)
 
@@ -119,22 +119,22 @@ class LLMRegistry:
 
     @classmethod
     def get_all_names(cls) -> List[str]:
-        """Return all registered model names in order.
+        """按顺序返回所有已注册模型名称.
 
         Returns:
-            List of model name strings.
+            模型名称字符串列表。
         """
         return [e["name"] for e in cls.LLMS]
 
     @classmethod
     def get_model_at_index(cls, index: int) -> Dict[str, Any]:
-        """Return the model entry at a specific index, wrapping to 0 if out of range.
+        """返回指定索引的模型条目，越界时回退到 0.
 
         Args:
-            index: Index into LLMS.
+            index: LLMS 中的索引。
 
         Returns:
-            Model entry dict.
+            模型条目字典。
         """
         if 0 <= index < len(cls.LLMS):
             return cls.LLMS[index]

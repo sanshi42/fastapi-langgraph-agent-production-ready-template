@@ -1,4 +1,4 @@
-"""Schemas for evals."""
+"""评测相关 schema."""
 
 from pydantic import (
     BaseModel,
@@ -7,7 +7,7 @@ from pydantic import (
 
 
 class ScoreSchema(BaseModel):
-    """Score schema for evals."""
+    """评测分数 schema."""
 
     score: float = Field(description="provide a score between 0 and 1")
     reasoning: str = Field(description="provide a one sentence reasoning")

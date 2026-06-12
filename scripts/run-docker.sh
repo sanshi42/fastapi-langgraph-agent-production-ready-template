@@ -1,19 +1,19 @@
 #!/bin/bash
 set -e
 
-# Script to securely run Docker containers
+# 安全运行 Docker 容器。
 
 if [ $# -ne 1 ]; then
-  echo "Usage: $0 <environment>"
-  echo "Environments: development, staging, production"
+  echo "用法: $0 <environment>"
+  echo "环境: development, staging, production"
   exit 1
 fi
 
 ENV=$1
 
-# Validate environment
+# 校验环境名称。
 if [[ ! "$ENV" =~ ^(development|staging|production)$ ]]; then
-  echo "Invalid environment. Must be one of: development, staging, production"
+  echo "环境无效。必须是以下之一: development, staging, production"
   exit 1
 fi
 
@@ -22,19 +22,19 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="$PROJECT_ROOT/.env.$ENV"
 
 if [ -f "$ENV_FILE" ]; then
-  echo "Loading environment variables from $ENV_FILE"
+  echo "正在从 $ENV_FILE 加载环境变量"
   set -a
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
 else
-  echo "Warning: $ENV_FILE not found. Relying on existing environment variables."
+  echo "警告：未找到 $ENV_FILE，将依赖当前已有环境变量。"
 fi
 
 cd "$PROJECT_ROOT"
 
 if [ -f "$ENV_FILE" ]; then
-  echo "Running docker compose with env file $ENV_FILE"
+  echo "正在使用 env 文件 $ENV_FILE 运行 docker compose"
   APP_ENV=$ENV docker compose --env-file "$ENV_FILE" up -d --build db app
 else
   APP_ENV=$ENV docker compose up -d --build db app

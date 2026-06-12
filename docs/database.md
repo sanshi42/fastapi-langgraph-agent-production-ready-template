@@ -1,15 +1,15 @@
-# Database & Migrations
+# 数据库与迁移
 
 ## Schema
 
 ```mermaid
 erDiagram
-    User ||--o{ Session : "has many"
+    User ||--o{ Session : "拥有多个"
 
     User {
         int id PK
         string email UK
-        string username "optional display name"
+        string username "可选展示名称"
         string hashed_password
         datetime created_at
     }
@@ -17,8 +17,8 @@ erDiagram
     Session {
         string id PK "UUID"
         int user_id FK
-        string name "optional session label"
-        string username "copied from User at creation"
+        string name "可选 session 标签"
+        string username "创建时从 User 复制"
         datetime created_at
     }
 
@@ -28,69 +28,69 @@ erDiagram
     }
 ```
 
-**User** — one per account. Email is unique. `username` is optional and used to personalise the system prompt.
+**User**：每个账号一条记录。Email 唯一。`username` 可选，用于个性化 system prompt。
 
-**Session** — one per conversation. A user can have many sessions. `username` is denormalised from `User` at creation time so chat requests never need an extra DB lookup. The session JWT scopes all chat requests.
+**Session**：每段对话一条记录。一个用户可以拥有多个 sessions。`username` 在创建时从 `User` 反规范化复制过来，这样聊天请求不需要额外查询数据库。session JWT 用于限定所有聊天请求的作用域。
 
-**Thread** — mirrors LangGraph's `AsyncPostgresSaver` checkpoint thread. Tracks which threads exist in the app's context.
+**Thread**：映射 LangGraph 的 `AsyncPostgresSaver` checkpoint thread，用来记录应用上下文中有哪些 threads。
 
-The LangGraph checkpointer also creates its own tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`) — these are managed by LangGraph itself, not by Alembic.
+LangGraph checkpointer 也会创建自己的表（`checkpoints`、`checkpoint_blobs`、`checkpoint_writes`），这些表由 LangGraph 自己管理，不由 Alembic 管理。
 
-pgvector creates a `longterm_memory` collection table managed by mem0 — also not by Alembic.
+pgvector 会创建由 mem0 管理的 `longterm_memory` collection 表，同样不由 Alembic 管理。
 
 ---
 
-## Migrations with Alembic
+## 使用 Alembic 做迁移
 
-All schema changes are managed through Alembic. The app no longer calls `create_all()` on startup — Alembic owns the schema.
+所有 schema 变更都通过 Alembic 管理。应用启动时不再调用 `create_all()`，schema 由 Alembic 负责。
 
-### Initial setup (fresh database)
+### 初始化设置（全新数据库）
 
 ```bash
-make migrate              # applies all migrations to the database
+make migrate              # 将所有迁移应用到数据库
 ```
 
-### Creating a migration after model changes
+### 模型变更后创建迁移
 
 ```bash
-# 1. Edit your SQLModel model (app/models/)
-# 2. Generate the migration
+# 1. 编辑 SQLModel model（app/models/）
+# 2. 生成迁移
 make migration MSG="add phone number to user"
 
-# 3. Review the generated file in alembic/versions/
-# 4. Apply it
+# 3. 审查 alembic/versions/ 下生成的文件
+# 4. 应用迁移
 make migrate
 ```
 
-### Other commands
+### 其他命令
 
 ```bash
-make migrate-downgrade    # roll back the last migration
-make migrate-history      # show the full migration history
+make migrate-downgrade    # 回滚上一次迁移
+make migrate-history      # 查看完整迁移历史
 ```
 
-Alembic reads DB credentials from your `.env` file (via `app/core/config.py`). Make sure the correct `APP_ENV` is set before running migrations.
+Alembic 会通过 `app/core/config.py` 从 `.env` 文件读取数据库凭据。运行迁移前，请确认已经设置正确的 `APP_ENV`。
 
-### How autogenerate works
+### autogenerate 如何工作
 
-`env.py` imports all SQLModel models so their metadata is registered, then calls `alembic revision --autogenerate`. Alembic diffs the current DB schema against the models and generates the upgrade/downgrade functions.
+`env.py` 会导入所有 SQLModel models，使 metadata 完成注册，然后调用 `alembic revision --autogenerate`。Alembic 会对比当前数据库 schema 和 models，并生成 upgrade/downgrade 函数。
 
-External tables (LangGraph checkpointer, mem0, pgvector) are excluded via `include_object` in `alembic/env.py` so Alembic never touches them.
+外部系统表（LangGraph checkpointer、mem0、pgvector）会通过 `alembic/env.py` 中的 `include_object` 排除，因此 Alembic 不会触碰它们。
 
-### Adding a new model
+### 添加新 model
 
-1. Create `app/models/your_model.py`
-2. Import it in `alembic/env.py` alongside the other model imports
-3. Run `make migration MSG="add your_model table"`
+1. 创建 `app/models/your_model.py`
+2. 在 `alembic/env.py` 中和其他 model 一起导入它
+3. 运行 `make migration MSG="add your_model table"`
 
 ---
 
-## Adding pgvector to a fresh database
+## 为全新数据库添加 pgvector
 
-pgvector must be enabled before running migrations:
+运行迁移前必须启用 pgvector：
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-With Docker (`make docker-up`), this is handled automatically by the `db` service. For external databases (e.g. Supabase), enable the extension via the dashboard or SQL editor.
+使用 Docker（`make docker-up`）时，`db` 服务会自动处理。对于外部数据库（例如 Supabase），请通过 dashboard 或 SQL editor 启用该 extension。

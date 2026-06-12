@@ -1,59 +1,59 @@
-# Evaluation
+# 评测
 
-The template includes a metric-based evaluation framework that fetches traces from Langfuse, scores them with LLM judges, and generates JSON reports.
+本模板包含一个基于指标的评测框架：它会从 Langfuse 获取 traces，用 LLM judge 打分，并生成 JSON 报告。
 
-## Running evaluations
+## 运行评测
 
 ```bash
-make eval                        # interactive mode — prompts for settings
-make eval-quick                  # runs with defaults, no prompts
-make eval-no-report              # runs but skips report generation
-make eval ENV=production         # run against production traces
+make eval                        # 交互模式，会提示配置项
+make eval-quick                  # 使用默认值运行，不显示 prompt
+make eval-no-report              # 运行评测但跳过报告生成
+make eval ENV=production         # 针对 production traces 运行
 ```
 
-## How it works
+## 工作方式
 
 ```mermaid
 flowchart LR
-    Langfuse -->|"fetch recent traces"| Evaluator
+    Langfuse -->|"获取近期 traces"| Evaluator
     Metrics["Metric prompts\nevals/metrics/prompts/*.md"] --> Evaluator
-    Evaluator -->|"LLM judge\nper trace × metric"| Score["pass / fail"]
-    Score --> Report["JSON report\nevals/reports/"]
+    Evaluator -->|"LLM judge\n每个 trace × metric"| Score["pass / fail"]
+    Score --> Report["JSON 报告\nevals/reports/"]
 ```
 
-1. **Fetch traces** — pulls recent LLM traces from Langfuse (configured via `LANGFUSE_*` env vars)
-2. **Score** — for each trace × metric combination, an LLM judge evaluates the output and returns pass/fail
-3. **Report** — a JSON report with aggregated stats and per-trace results is saved to `evals/reports/`
+1. **获取 traces**：从 Langfuse 拉取近期 LLM traces（通过 `LANGFUSE_*` 环境变量配置）
+2. **评分**：对每个 trace x metric 组合，由 LLM judge 评测输出并返回 pass/fail
+3. **报告**：将聚合统计和每条 trace 的结果保存为 JSON 报告，路径为 `evals/reports/`
 
-## Built-in metrics
+## 内置指标
 
-| Metric | What it checks |
+| 指标 | 检查内容 |
 | --- | --- |
-| `helpfulness` | Did the response actually help the user? |
-| `conciseness` | Was the response appropriately concise? |
-| `hallucination` | Did the response contain made-up facts? |
-| `relevancy` | Was the response on-topic? |
-| `toxicity` | Did the response contain harmful content? |
+| `helpfulness` | 响应是否真正帮助了用户 |
+| `conciseness` | 响应是否足够简洁 |
+| `hallucination` | 响应是否包含编造事实 |
+| `relevancy` | 响应是否围绕主题 |
+| `toxicity` | 响应是否包含有害内容 |
 
-## Adding a custom metric
+## 添加自定义指标
 
-1. Create a markdown file in `evals/metrics/prompts/`:
+1. 在 `evals/metrics/prompts/` 中创建 markdown 文件：
 
 ```markdown
-# My Metric
+# 我的指标
 
-Evaluate whether the assistant response...
+评估 assistant 响应是否...
 
-## Scoring
+## 评分
 
-Return "pass" if... Return "fail" if...
+如果...返回 "pass"；如果...返回 "fail"。
 ```
 
-2. The evaluator auto-discovers and applies all `.md` files in that directory.
+2. 评测器会自动发现并应用该目录下的所有 `.md` 文件。
 
-## Report format
+## 报告格式
 
-Reports are saved to `evals/reports/evaluation_report_YYYYMMDD_HHMMSS.json`:
+报告会保存到 `evals/reports/evaluation_report_YYYYMMDD_HHMMSS.json`：
 
 ```json
 {
@@ -70,11 +70,11 @@ Reports are saved to `evals/reports/evaluation_report_YYYYMMDD_HHMMSS.json`:
 }
 ```
 
-## Eval LLM configuration
+## 评测 LLM 配置
 
-The evaluator uses a separate LLM config so you can use a different (cheaper) model for judging:
+评测器使用独立 LLM 配置，因此可以使用不同的、更便宜的模型做 judge：
 
 ```bash
 EVALUATION_LLM=gpt-5
-EVALUATION_API_KEY=...   # defaults to OPENAI_API_KEY if not set
+EVALUATION_API_KEY=...   # 未设置时默认使用 OPENAI_API_KEY
 ```

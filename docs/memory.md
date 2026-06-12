@@ -1,10 +1,10 @@
-# Memory
+# 记忆
 
-## Overview
+## 概览
 
-The template includes a long-term memory system powered by [mem0](https://github.com/mem0ai/mem0) and pgvector. Memories are extracted from conversations, stored as vector embeddings, and retrieved semantically on each request — giving the agent context from past sessions.
+本模板包含一个由 [mem0](https://github.com/mem0ai/mem0) 和 pgvector 驱动的长期记忆系统。系统会从对话中提取 memories，以 vector embeddings 的形式存储，并在每次请求时通过语义搜索取回相关内容，为 agent 提供过去 sessions 的上下文。
 
-## How it works
+## 工作方式
 
 ```mermaid
 sequenceDiagram
@@ -14,57 +14,57 @@ sequenceDiagram
     participant M as mem0
     participant PG as pgvector
 
-    Note over G: On every chat request
+    Note over G: 每个聊天请求
     G->>MS: search(user_id, query)
     MS->>Cache: get(memory:{user_id}:{hash})
-    alt cache hit
+    alt cache 命中
         Cache-->>MS: cached result
-    else cache miss
+    else cache 未命中
         MS->>M: memory.search(user_id, query)
-        M->>PG: vector similarity search
+        M->>PG: vector 相似度搜索
         PG-->>M: top-k memories
         M-->>MS: formatted results
         MS->>Cache: set(key, result, TTL)
     end
-    MS-->>G: relevant memories string
+    MS-->>G: 相关 memories 字符串
 
-    Note over G: After LLM response (background)
+    Note over G: LLM 响应后（后台）
     G-)MS: add(user_id, messages)
     MS->>M: memory.add(messages, user_id)
-    M->>PG: store new embeddings
+    M->>PG: 存储新的 embeddings
 ```
 
-## Cache layer
+## 缓存层
 
-Memory search results are cached to avoid repeated pgvector queries for similar questions within the same TTL window.
+Memory search 结果会被缓存，避免在同一个 TTL 窗口内对相似问题重复查询 pgvector。
 
-- **With Valkey/Redis**: cache is shared across app instances. Set `VALKEY_HOST` in your `.env`.
-- **Without Valkey**: falls back to an in-memory `TTLCache` — works fine for single instances.
+- **使用 Valkey/Redis**：缓存会在多个应用实例间共享。请在 `.env` 中设置 `VALKEY_HOST`。
+- **不使用 Valkey**：回退到内存 `TTLCache`，适合单实例运行。
 
-Cache key: `memory:{user_id}:{sha256(query)[:16]}`
+Cache key：`memory:{user_id}:{sha256(query)[:16]}`
 TTL: `CACHE_TTL_SECONDS` (default: 60s)
 
-Only successful, non-empty results are cached. Errors are never cached.
+只缓存成功且非空的结果，错误结果永远不会缓存。
 
-## Memory updates
+## 记忆更新
 
-After the LLM produces a response, memories are updated **in the background** via `asyncio.create_task`. This means:
-- The response is returned immediately, without waiting for mem0 to finish
-- Memory updates don't block or slow down the chat response
+LLM 生成响应后，memories 会通过 `asyncio.create_task` **在后台**更新。这意味着：
+- 响应会立即返回，不等待 mem0 完成
+- 记忆更新不会阻塞或拖慢聊天响应
 
-## Configuration
+## 配置
 
-| Variable | Default | Description |
+| 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `LONG_TERM_MEMORY_COLLECTION_NAME` | `longterm_memory` | pgvector collection name |
-| `LONG_TERM_MEMORY_MODEL` | `gpt-5-nano` | LLM used by mem0 to extract and process memories |
-| `LONG_TERM_MEMORY_EMBEDDER_MODEL` | `text-embedding-3-small` | Embedding model for semantic search |
-| `CACHE_TTL_SECONDS` | `60` | Memory search cache TTL |
+| `LONG_TERM_MEMORY_COLLECTION_NAME` | `longterm_memory` | pgvector collection 名称 |
+| `LONG_TERM_MEMORY_MODEL` | `gpt-5-nano` | mem0 用于提取和处理 memories 的 LLM |
+| `LONG_TERM_MEMORY_EMBEDDER_MODEL` | `text-embedding-3-small` | 语义搜索使用的 embedding 模型 |
+| `CACHE_TTL_SECONDS` | `60` | Memory search 缓存 TTL |
 
-## Startup pre-warming
+## 启动预热
 
-At startup, `memory_service.initialize()` is called in the app lifespan. This establishes the pgvector connection pool and runs mem0's schema check, so the first user request doesn't pay the ~130ms cold-init cost.
+启动时，应用 lifespan 会调用 `memory_service.initialize()`。这会建立 pgvector 连接池并执行 mem0 schema 检查，避免第一个用户请求承担约 130ms 的冷启动成本。
 
-## Per-user isolation
+## 用户隔离
 
-Each user's memories are stored and searched independently using `user_id` as the namespace. Users cannot access each other's memories.
+每个用户的 memories 都以 `user_id` 作为 namespace 独立存储和搜索。用户无法访问彼此的 memories。

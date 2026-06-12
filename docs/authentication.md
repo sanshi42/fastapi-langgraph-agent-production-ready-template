@@ -1,6 +1,6 @@
-# Authentication
+# 认证
 
-## Flow
+## 流程
 
 ```mermaid
 sequenceDiagram
@@ -20,20 +20,20 @@ sequenceDiagram
     A-->>C: {messages}
 ```
 
-The API uses **two token scopes**:
+API 使用**两种 token 作用域**：
 
-- **User token** — issued on register/login, identifies the user. Used to create and list sessions.
-- **Session token** — issued per conversation session. Required for all chat endpoints. Scoped to a single `session_id`.
+- **User token**：注册/登录时签发，用于识别用户。用于创建和列出 sessions。
+- **Session token**：每个对话 session 单独签发。所有聊天端点都需要它，作用域限定在单个 `session_id`。
 
-Both are signed JWTs (HS256) with a configurable expiry (`JWT_ACCESS_TOKEN_EXPIRE_DAYS`).
+二者都是使用 HS256 签名的 JWT，过期时间可通过 `JWT_ACCESS_TOKEN_EXPIRE_DAYS` 配置。
 
 ---
 
-## Endpoints
+## 端点
 
 ### `POST /api/v1/auth/register`
 
-Create a new account.
+创建新账号。
 
 ```json
 {
@@ -43,15 +43,15 @@ Create a new account.
 }
 ```
 
-Password requirements: 8+ chars, uppercase, lowercase, number, special character.
+密码要求：至少 8 个字符，包含大写字母、小写字母、数字和特殊字符。
 
-`username` is optional. When provided, it's passed to the agent's system prompt so the LLM knows the user's name.
+`username` 可选。提供后，它会传入 agent 的 system prompt，让 LLM 知道用户名称。
 
 ---
 
 ### `POST /api/v1/auth/login`
 
-Exchange credentials for a user token. Uses OAuth2 password grant form fields.
+用凭据换取 user token。该端点使用 OAuth2 password grant form fields。
 
 ```bash
 curl -X POST /api/v1/auth/login \
@@ -60,26 +60,26 @@ curl -X POST /api/v1/auth/login \
   -F "grant_type=password"
 ```
 
-Returns `access_token` and `expires_at`.
+返回 `access_token` 和 `expires_at`。
 
 ---
 
 ### `POST /api/v1/auth/session`
 
-Create a new chat session. Requires a valid user token.
+创建新的聊天 session。需要有效 user token。
 
 ```bash
 curl -X POST /api/v1/auth/session \
   -H "Authorization: Bearer <user token>"
 ```
 
-Returns `session_id` and a session-scoped `token`. Use this session token for all subsequent chat requests.
+返回 `session_id` 和限定在该 session 的 `token`。后续所有聊天请求都使用这个 session token。
 
 ---
 
 ### `PATCH /api/v1/auth/session/{session_id}/name`
 
-Rename a session.
+重命名 session。
 
 ```bash
 curl -X PATCH /api/v1/auth/session/{session_id}/name \
@@ -91,20 +91,20 @@ curl -X PATCH /api/v1/auth/session/{session_id}/name \
 
 ### `DELETE /api/v1/auth/session/{session_id}`
 
-Delete a session and its chat history.
+删除 session 及其聊天历史。
 
 ---
 
 ### `GET /api/v1/auth/sessions`
 
-List all sessions for the authenticated user. Requires a user token.
+列出已认证用户的所有 sessions。需要 user token。
 
 ---
 
-## Security notes
+## 安全说明
 
-- Passwords are hashed with bcrypt before storage — plaintext is never persisted.
-- JWTs include a `jti` (JWT ID) claim for token uniqueness.
-- All string inputs are sanitised before use.
-- Rate limits protect the register (10/hour) and login (20/min) endpoints against brute force.
-- Set a long random `JWT_SECRET_KEY` in production — at least 32 characters.
+- 密码存储前会使用 bcrypt 哈希，绝不持久化明文。
+- JWT 包含 `jti`（JWT ID）claim，用于保证 token 唯一性。
+- 所有字符串输入在使用前都会清洗。
+- register（10/hour）和 login（20/min）端点有速率限制，用于防护暴力破解。
+- 生产环境应设置长随机 `JWT_SECRET_KEY`，至少 32 个字符。

@@ -1,4 +1,4 @@
-"""This file contains the authentication utilities for the application."""
+"""应用认证工具函数."""
 
 import re
 from datetime import (
@@ -20,14 +20,14 @@ from app.utils.sanitization import sanitize_string
 
 
 def create_access_token(thread_id: str, expires_delta: Optional[timedelta] = None) -> Token:
-    """Create a new access token for a thread.
+    """为 thread 创建新的 access token.
 
     Args:
-        thread_id: The unique thread ID for the conversation.
-        expires_delta: Optional expiration time delta.
+        thread_id: 对话 thread 的唯一 ID。
+        expires_delta: 可选过期时间间隔。
 
     Returns:
-        Token: The generated access token.
+        Token: 生成的 access token。
     """
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -38,7 +38,7 @@ def create_access_token(thread_id: str, expires_delta: Optional[timedelta] = Non
         "sub": thread_id,
         "exp": expire,
         "iat": datetime.now(UTC),
-        "jti": sanitize_string(f"{thread_id}-{datetime.now(UTC).timestamp()}"),  # Add unique token identifier
+        "jti": sanitize_string(f"{thread_id}-{datetime.now(UTC).timestamp()}"),  # 添加唯一 token 标识。
     }
 
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -49,23 +49,23 @@ def create_access_token(thread_id: str, expires_delta: Optional[timedelta] = Non
 
 
 def verify_token(token: str) -> Optional[str]:
-    """Verify a JWT token and return the thread ID.
+    """校验 JWT token 并返回 thread ID.
 
     Args:
-        token: The JWT token to verify.
+        token: 待校验 JWT token。
 
     Returns:
-        Optional[str]: The thread ID if token is valid, None otherwise.
+        Optional[str]: token 有效时返回 thread ID，否则返回 None。
 
     Raises:
-        ValueError: If the token format is invalid
+        ValueError: token 格式无效时抛出。
     """
     if not token or not isinstance(token, str):
         logger.warning("token_invalid_format")
         raise ValueError("Token must be a non-empty string")
 
-    # Basic format validation before attempting decode
-    # JWT tokens consist of 3 base64url-encoded segments separated by dots
+    # 解码前先做基础格式校验。
+    # JWT token 由 3 段 base64url 编码内容组成，并以点号分隔。
     if not re.match(r"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$", token):
         logger.warning("token_suspicious_format")
         raise ValueError("Token format is invalid - expected JWT format")

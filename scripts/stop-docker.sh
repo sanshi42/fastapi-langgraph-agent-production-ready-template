@@ -1,37 +1,37 @@
 #!/bin/bash
 set -e
 
-# Script to stop and remove Docker containers
+# 停止并删除 Docker 容器。
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <environment>"
-    echo "Environments: development, staging, production"
+    echo "用法: $0 <environment>"
+    echo "环境: development, staging, production"
     exit 1
 fi
 
 ENV=$1
 
-# Validate environment
+# 校验环境名称。
 if [[ ! "$ENV" =~ ^(development|staging|production)$ ]]; then
-    echo "Invalid environment. Must be one of: development, staging, production"
+    echo "环境无效。必须是以下之一: development, staging, production"
     exit 1
 fi
 
 CONTAINER_NAME="fastapi-langgraph-$ENV"
 
-echo "Stopping container for $ENV environment"
+echo "正在停止 $ENV 环境的容器"
 
-# Check if container exists
+# 检查容器是否存在。
 if [ ! "$(docker ps -a -q -f name=$CONTAINER_NAME)" ]; then
-    echo "Container $CONTAINER_NAME does not exist. Nothing to do."
+    echo "容器 $CONTAINER_NAME 不存在，无需处理。"
     exit 0
 fi
 
-# Stop and remove container
-echo "Stopping container $CONTAINER_NAME..."
-docker stop $CONTAINER_NAME >/dev/null 2>&1 || echo "Container was not running"
+# 停止并删除容器。
+echo "正在停止容器 $CONTAINER_NAME..."
+docker stop $CONTAINER_NAME >/dev/null 2>&1 || echo "容器未运行"
 
-echo "Removing container $CONTAINER_NAME..."
+echo "正在删除容器 $CONTAINER_NAME..."
 docker rm $CONTAINER_NAME >/dev/null 2>&1
 
-echo "Container $CONTAINER_NAME stopped and removed successfully"
+echo "容器 $CONTAINER_NAME 已成功停止并删除"

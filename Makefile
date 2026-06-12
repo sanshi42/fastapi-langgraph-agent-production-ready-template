@@ -5,11 +5,11 @@ ENV            ?= development
 VALID_ENVS     := development staging production test
 
 # ---------------------------------------------------------------------------
-# Helpers
+# 辅助方法
 # ---------------------------------------------------------------------------
 define check_env
 	@if ! echo "$(VALID_ENVS)" | grep -qw "$(ENV)"; then \
-		echo "Invalid ENV=$(ENV). Must be one of: $(VALID_ENVS)"; exit 1; \
+		echo "无效的 ENV=$(ENV)。必须是以下之一: $(VALID_ENVS)"; exit 1; \
 	fi
 endef
 
@@ -17,15 +17,15 @@ define load_env_file
 	$(call check_env)
 	@ENV_FILE=.env.$(ENV); \
 	if [ ! -f $$ENV_FILE ]; then \
-		echo "Environment file $$ENV_FILE not found. Please create it."; exit 1; \
+		echo "环境文件 $$ENV_FILE 不存在，请先创建。"; exit 1; \
 	fi
 endef
 
-# Shorthand: source env vars then run a command
+# 快捷方法：先加载环境变量，再执行命令。
 run_with_env = bash -c "source scripts/set_env.sh $(ENV) && $(1)"
 
 # ---------------------------------------------------------------------------
-# Setup
+# 初始化
 # ---------------------------------------------------------------------------
 install:
 	pip install uv
@@ -33,7 +33,7 @@ install:
 	uv run pre-commit install
 
 # ---------------------------------------------------------------------------
-# Server
+# 服务
 # ---------------------------------------------------------------------------
 dev:
 	@$(call run_with_env,uv run uvicorn app.main:app --reload --port 8000)
@@ -48,14 +48,14 @@ _serve:
 	@$(call run_with_env,./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --loop uvloop)
 
 # ---------------------------------------------------------------------------
-# Database migrations
+# 数据库迁移
 # ---------------------------------------------------------------------------
 migrate:
 	@$(call run_with_env,uv run alembic upgrade head)
 
 migration:
 	@if [ -z "$(MSG)" ]; then \
-		echo "Usage: make migration MSG=\"describe your change\""; exit 1; \
+		echo "用法: make migration MSG=\"描述你的变更\""; exit 1; \
 	fi
 	@$(call run_with_env,uv run alembic revision --autogenerate -m '$(MSG)')
 
@@ -66,7 +66,7 @@ migrate-history:
 	@$(call run_with_env,uv run alembic history --verbose)
 
 # ---------------------------------------------------------------------------
-# Evaluation
+# 评测
 # ---------------------------------------------------------------------------
 eval:
 	@$(call run_with_env,python -m evals.main --interactive)
@@ -78,7 +78,7 @@ eval-no-report:
 	@$(call run_with_env,python -m evals.main --no-report)
 
 # ---------------------------------------------------------------------------
-# Code quality
+# 代码质量
 # ---------------------------------------------------------------------------
 lint:
 	uv run ruff check .
@@ -90,7 +90,7 @@ typecheck:
 	uv run pyright
 
 check: lint typecheck
-	@echo "All checks passed"
+	@echo "所有检查通过"
 
 pre-commit:
 	uv run pre-commit run --all-files
@@ -99,7 +99,7 @@ pre-commit-update:
 	uv run pre-commit autoupdate
 
 # ---------------------------------------------------------------------------
-# Docker — single service (API + DB)
+# Docker：单服务组合（API + DB）
 # ---------------------------------------------------------------------------
 docker-build:
 	$(call check_env)
@@ -118,7 +118,7 @@ docker-logs:
 	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) logs -f app db
 
 # ---------------------------------------------------------------------------
-# Docker — full stack (API + DB + Prometheus + Grafana)
+# Docker：完整栈（API + DB + Prometheus + Grafana）
 # ---------------------------------------------------------------------------
 stack-up:
 	$(call load_env_file)
@@ -133,57 +133,57 @@ stack-logs:
 	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) logs -f
 
 # ---------------------------------------------------------------------------
-# Misc
+# 其他
 # ---------------------------------------------------------------------------
 clean:
 	rm -rf .venv __pycache__ .pytest_cache
 
 # ---------------------------------------------------------------------------
-# Help
+# 帮助
 # ---------------------------------------------------------------------------
 help:
-	@echo "Usage: make <target> [ENV=development|staging|production|test]"
+	@echo "用法: make <target> [ENV=development|staging|production|test]"
 	@echo ""
-	@echo "Setup:"
-	@echo "  install              Install deps, set up pre-commit hooks"
+	@echo "初始化:"
+	@echo "  install              安装依赖并设置 pre-commit hooks"
 	@echo ""
-	@echo "Server:"
-	@echo "  dev                  Dev server with hot reload (port 8000)"
-	@echo "  staging              Staging server"
-	@echo "  prod                 Production server"
+	@echo "服务:"
+	@echo "  dev                  启动带热重载的开发服务（端口 8000）"
+	@echo "  staging              启动 staging 服务"
+	@echo "  prod                 启动 production 服务"
 	@echo ""
-	@echo "Database:"
-	@echo "  migrate              Run migrations to latest (default ENV=development)"
-	@echo "  migration MSG=...    Generate migration from model changes"
-	@echo "  migrate-downgrade    Rollback last migration"
-	@echo "  migrate-history      Show migration history"
+	@echo "数据库:"
+	@echo "  migrate              执行迁移到最新版本（默认 ENV=development）"
+	@echo "  migration MSG=...    根据模型变更生成迁移"
+	@echo "  migrate-downgrade    回滚上一次迁移"
+	@echo "  migrate-history      查看迁移历史"
 	@echo ""
-	@echo "Evaluation:"
-	@echo "  eval                 Run evals (interactive)"
-	@echo "  eval-quick           Run evals (default settings)"
-	@echo "  eval-no-report       Run evals without report"
+	@echo "评测:"
+	@echo "  eval                 运行交互式评测"
+	@echo "  eval-quick           使用默认设置运行评测"
+	@echo "  eval-no-report       运行评测但不生成报告"
 	@echo ""
-	@echo "Code quality:"
-	@echo "  lint                 Ruff lint check"
-	@echo "  format               Ruff format"
-	@echo "  typecheck            Pyright static type check"
-	@echo "  check                Run lint + typecheck"
-	@echo "  pre-commit           Run all pre-commit hooks"
-	@echo "  pre-commit-update    Update pre-commit hook versions"
+	@echo "代码质量:"
+	@echo "  lint                 运行 Ruff lint 检查"
+	@echo "  format               运行 Ruff format"
+	@echo "  typecheck            运行 Pyright 静态类型检查"
+	@echo "  check                运行 lint 和 typecheck"
+	@echo "  pre-commit           运行全部 pre-commit hooks"
+	@echo "  pre-commit-update    更新 pre-commit hook 版本"
 	@echo ""
-	@echo "Docker (API + DB):"
-	@echo "  docker-build         Build Docker image"
-	@echo "  docker-up            Start API + DB containers"
-	@echo "  docker-down          Stop containers"
-	@echo "  docker-logs          Tail container logs"
+	@echo "Docker（API + DB）:"
+	@echo "  docker-build         构建 Docker 镜像"
+	@echo "  docker-up            启动 API + DB 容器"
+	@echo "  docker-down          停止容器"
+	@echo "  docker-logs          跟踪容器日志"
 	@echo ""
-	@echo "Docker (full stack — includes Prometheus + Grafana):"
-	@echo "  stack-up             Start entire stack"
-	@echo "  stack-down           Stop entire stack"
-	@echo "  stack-logs           Tail all service logs"
+	@echo "Docker（完整栈，包含 Prometheus + Grafana）:"
+	@echo "  stack-up             启动完整栈"
+	@echo "  stack-down           停止完整栈"
+	@echo "  stack-logs           跟踪所有服务日志"
 	@echo ""
-	@echo "Misc:"
-	@echo "  clean                Remove .venv, __pycache__, .pytest_cache"
+	@echo "其他:"
+	@echo "  clean                删除 .venv、__pycache__、.pytest_cache"
 
 .PHONY: install dev staging prod _serve \
         migrate migration migrate-downgrade migrate-history \
