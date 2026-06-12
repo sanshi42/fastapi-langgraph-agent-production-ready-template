@@ -117,6 +117,22 @@ docker-logs:
 	$(call load_env_file)
 	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) logs -f app db
 
+# 在运行中的 app 容器里执行 Alembic 迁移，容器内可以解析 POSTGRES_HOST=db。
+# 需要先启动栈：make docker-up。
+docker-migrate:
+	$(call load_env_file)
+	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) exec -T app /app/.venv/bin/alembic upgrade head
+
+# 在运行中的 app 容器里回滚上一次迁移。
+docker-migrate-downgrade:
+	$(call load_env_file)
+	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) exec -T app /app/.venv/bin/alembic downgrade -1
+
+# 在运行中的 app 容器里查看迁移历史。
+docker-migrate-history:
+	$(call load_env_file)
+	@APP_ENV=$(ENV) $(DOCKER_COMPOSE) --env-file .env.$(ENV) exec -T app /app/.venv/bin/alembic history --verbose
+
 # ---------------------------------------------------------------------------
 # Docker：完整栈（API + DB + Prometheus + Grafana）
 # ---------------------------------------------------------------------------
@@ -176,6 +192,9 @@ help:
 	@echo "  docker-up            启动 API + DB 容器"
 	@echo "  docker-down          停止容器"
 	@echo "  docker-logs          跟踪容器日志"
+	@echo "  docker-migrate       在 app 容器内执行数据库迁移"
+	@echo "  docker-migrate-downgrade  在 app 容器内回滚上一次迁移"
+	@echo "  docker-migrate-history    在 app 容器内查看迁移历史"
 	@echo ""
 	@echo "Docker（完整栈，包含 Prometheus + Grafana）:"
 	@echo "  stack-up             启动完整栈"
@@ -189,6 +208,7 @@ help:
         migrate migration migrate-downgrade migrate-history \
         eval eval-quick eval-no-report \
         lint format typecheck check pre-commit pre-commit-update \
-        docker-build docker-up docker-down docker-logs \
+        docker-build docker-up docker-down docker-logs docker-migrate \
+        docker-migrate-downgrade docker-migrate-history \
         stack-up stack-down stack-logs \
         clean help

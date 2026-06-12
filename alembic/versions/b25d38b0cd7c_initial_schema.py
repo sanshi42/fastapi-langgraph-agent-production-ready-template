@@ -22,15 +22,37 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """升级 schema."""
-    # ### Alembic 自动生成的命令，请按需调整。###
-    op.add_column("session", sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=True))
-    op.add_column("user", sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=True))
-    # ### Alembic 命令结束。###
+    op.create_table(
+        "user",
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("hashed_password", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_user_email"), "user", ["email"], unique=True)
+    op.create_table(
+        "session",
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_table(
+        "thread",
+        sa.Column("id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
 
 
 def downgrade() -> None:
     """降级 schema."""
-    # ### Alembic 自动生成的命令，请按需调整。###
-    op.drop_column("user", "username")
-    op.drop_column("session", "username")
-    # ### Alembic 命令结束。###
+    op.drop_table("thread")
+    op.drop_table("session")
+    op.drop_index(op.f("ix_user_email"), table_name="user")
+    op.drop_table("user")

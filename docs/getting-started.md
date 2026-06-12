@@ -27,6 +27,9 @@ Langfuse、Prometheus、Grafana 都不是第一次启动的必需项。先把主
 git clone <repo-url> my-agent
 cd my-agent
 cp .env.example .env.development
+make install          # 安装 Python 依赖和 pre-commit hooks
+make docker-up        # 启动 API（端口 8000）和 PostgreSQL
+make docker-migrate   # 在 app 容器内执行 Alembic 迁移
 ```
 
 以后本地开发默认改 `.env.development`。不要把真实密钥写进 `.env.example`，也不要把 `.env.development` 提交到 Git。
@@ -138,7 +141,7 @@ make docker-down
 应用需要数据库表。Docker 路径下推荐直接在 `app` 容器里执行迁移，因为容器内能稳定解析 `POSTGRES_HOST=db`：
 
 ```bash
-docker compose --env-file .env.development exec app uv run alembic upgrade head
+make docker-migrate
 ```
 
 看到命令正常结束后，再打开 [http://localhost:8000/docs](http://localhost:8000/docs) 做接口调用。
@@ -369,12 +372,12 @@ docker compose --env-file .env.development ps
 make docker-logs
 ```
 
-### `make migrate` 连不上 `db`
+### `make migrate` 连不上 `db` 或提示 `could not translate host name "db"`
 
 这是因为 `db` 是 Docker Compose 网络里的服务名，宿主机不一定能解析。Docker 路径下请在 app 容器里跑迁移：
 
 ```bash
-docker compose --env-file .env.development exec app uv run alembic upgrade head
+make docker-migrate
 ```
 
 如果你想从宿主机执行 `make migrate`，需要把 `.env.development` 里的 `POSTGRES_HOST` 改成 `localhost`，并确保 API 容器也使用能访问数据库的配置；第一次启动不推荐这样混用。

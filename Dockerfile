@@ -22,12 +22,13 @@ RUN apt-get update && apt-get install -y \
     && pip install uv \
     && rm -rf /var/lib/apt/lists/*
 
-# 先复制 pyproject.toml，以便复用 Docker cache。
-COPY pyproject.toml .
-RUN uv venv && . .venv/bin/activate && uv pip install -e .
+# 先安装锁定依赖，只有 pyproject.toml / uv.lock 变化时才失效 Docker cache。
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project
 
-# 复制应用代码。
+# 复制应用代码，并基于锁定依赖安装项目本身。
 COPY . .
+RUN uv sync --frozen
 
 # 切换用户前先给 entrypoint 脚本添加可执行权限。
 RUN chmod +x /app/scripts/docker-entrypoint.sh

@@ -10,7 +10,7 @@ from app.core.logging import logger
 def langfuse_init() -> bool:
     """初始化 Langfuse，失败时不阻塞应用启动."""
     if not settings.LANGFUSE_TRACING_ENABLED:
-        logger.info("langfuse_tracing_disabled")
+        logger.debug("langfuse_tracing_disabled")
         return False
 
     try:
@@ -28,8 +28,8 @@ def langfuse_init() -> bool:
             return True
 
         logger.warning("langfuse_auth_failure")
-    except Exception as e:
-        logger.exception("langfuse_initialization_failed", error=str(e))
+    except Exception:
+        logger.exception("langfuse_initialization_failed")
 
     settings.LANGFUSE_TRACING_ENABLED = False
     return False
