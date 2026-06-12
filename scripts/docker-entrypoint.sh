@@ -79,8 +79,7 @@ echo "数据库用户: $( [[ -n ${POSTGRES_USER:-${DB_USER:-}} ]] && echo '已�
 echo "LLM 模型: ${DEFAULT_LLM_MODEL:-未设置}"
 echo "Debug 模式: ${DEBUG:-false}"
 
-# 必要时运行数据库迁移。
-# 例如：alembic upgrade head
+# 如需执行数据库迁移，请在容器启动后使用 `make docker-migrate`。
 
 # 执行 CMD。
 exec "$@"
