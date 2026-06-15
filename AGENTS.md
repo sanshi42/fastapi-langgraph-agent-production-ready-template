@@ -2,6 +2,35 @@
 
 This document provides essential guidelines for AI agents working on this LangGraph FastAPI Agent project.
 
+## Lightweight Agile Development Framework
+
+Use this lightweight Topic workflow only when a goal is too large for one
+directly verifiable task. Small tasks should be implemented directly without
+creating workflow documents.
+
+### Working Style
+
+- Users describe goals; agents maintain Topic and Task state internally.
+- Create a Topic for complex goals that need multiple independently verifiable
+  Tasks, dependency ordering, parallel work, or cross-session context.
+- Keep at most one `active` Topic at a time. New work inside the current goal
+  updates that Topic; independent complex goals get their own Topic.
+- Prefer user-facing phrases like "complex goal" or "current goal" over
+  internal workflow terms such as "activate Topic" or "claim Task".
+
+### Topic Documents
+
+Complex goals live under `docs/<english-kebab-case-topic>/`. A Topic has at
+most three files:
+
+- `proposal.md`: goal, boundary, `status`, and `priority`. This is the scanning
+  entrypoint; allowed statuses are `draft`, `active`, `paused`, `done`, and
+  `closed`. Allowed priorities are `P0` to `P3`, with `P2` as the default.
+- `plan.md`: implementation approach, key decisions, and Topic-level
+  verification. Create it only when execution starts.
+- `tasks.md`: Task list with dependencies, status, and per-Task verification.
+  Use it to express order and validation, not as a second planning document.
+
 ## Quick Commands
 
 ```bash
