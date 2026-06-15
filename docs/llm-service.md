@@ -70,6 +70,10 @@ llm_service.bind_tools(tools)
 
 fallback 过程中切换模型时，tools 会自动重新绑定到新模型。
 
+默认工具池还包含 `app/agent_runtime/` 提供的 coding-agent 能力。工具真正执行前会经过 Tool Policy；需要审批时由 LangGraph interrupt 暂停 graph，而不是在 LLM service 内部绕过 tracing 或 checkpoint。
+
+如果配置了 `AGENT_MCP_CONFIG_PATH`，LangGraph graph 创建时会通过官方 MCP Python SDK 发现 server tools，并把它们按 `mcp__{server}__{tool}` 加入同一工具池。MCP 工具同样经过 Tool Policy，名称包含 `write`、`delete`、`deploy` 等 destructive 语义时会先进入审批。
+
 ## 结构化输出
 
 将 Pydantic model 作为 `response_format` 传入，可以得到校验后的实例，而不是原始 `BaseMessage`：

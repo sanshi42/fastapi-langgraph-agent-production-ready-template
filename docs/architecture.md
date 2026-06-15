@@ -21,6 +21,7 @@ graph TB
         LLM["LLM Service\n(fallback + retry)"]
         Memory["Memory Service\n(mem0 + cache)"]
         Tools["Tools\n(并发执行)"]
+        Runtime["Agent Runtime\n(workspace, policy,\ntasks, cron, MCP)"]
     end
 
     subgraph Storage["存储"]
@@ -37,7 +38,7 @@ graph TB
     Client --> MW --> Auth --> API
     API --> Graph
     Graph --> LLM --> Langfuse
-    Graph --> Tools
+    Graph --> Tools --> Runtime
     Graph --> Memory --> Cache
     Graph <--> Checkpointer
     Memory --> PG
@@ -105,6 +106,10 @@ graph LR
 
 **Tool calls 并发执行。** 当 LLM 在一次响应中返回多个 tool calls 时，它们会通过 `asyncio.gather` 并行执行。
 
+**Tool Policy 统一审批。** Agent runtime tools 默认暴露给聊天 Agent，但 shell、写文件、worktree、cron、teammate 和 destructive MCP 工具在执行前会先经过 Tool Policy。需要人工确认时，graph 使用 LangGraph interrupt 暂停，并在用户恢复后继续或拒绝该工具调用。
+
+**Agent runtime 状态进 Postgres。** task、worktree、job、cron、teammate、message、approval、MCP server 和 runtime event 都按 `user_id + session_id` 隔离。workspace 文件、skills 和 project memory 仍保留在 `AGENT_WORKSPACE_ROOT` 下，便于人工审阅。
+
 **System prompt 在模块加载时缓存。** `system.md` 在启动时只读取一次。每个请求只需要用用户名、当前时间和检索到的 memories 执行 `.format()`，没有额外文件 I/O。
 
 **LLM fallback 有总超时。** 整个 fallback loop（重试次数 x 模型数）包在 `asyncio.wait_for(timeout=LLM_TOTAL_TIMEOUT)` 中，避免无限挂起。
@@ -120,6 +125,7 @@ graph LR
 | LangGraph Agent | `app/core/langgraph/graph.py` | 编排对话循环 |
 | LLM Service | `app/services/llm/` | 模型注册表、重试、循环 fallback、结构化输出 |
 | Memory Service | `app/services/memory.py` | mem0 语义记忆 + 缓存 |
+| Agent Runtime | `app/agent_runtime/` | workspace 工具、Tool Policy、task、cron、MCP、skills、project memory |
 | Session Naming | `app/services/session_naming.py` | 为新 session 后台生成 LLM 标题 |
 | Database Service | `app/services/database.py` | User/session CRUD |
 | Cache Service | `app/core/cache.py` | Valkey/Redis，以及内存 fallback |

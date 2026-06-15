@@ -30,6 +30,7 @@ from app.core.middleware import (
     ProfilingMiddleware,
 )
 from app.core.observability import langfuse_init
+from app.agent_runtime.worker import agent_runtime_worker
 from app.services.database import database_service
 from app.services.memory import memory_service
 
@@ -68,9 +69,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception("memory_service_pre_warm_failed", error=str(e))
 
+    # 应用内 Agent runtime worker 使用 Postgres lease 去重执行后台 job。
+    if settings.AGENT_WORKER_ENABLED:
+        try:
+            agent_runtime_worker.start()
+        except Exception as e:
+            logger.exception("agent_runtime_worker_start_failed", error=str(e))
+
     yield
 
     # 应用关闭时清理资源。
+    await agent_runtime_worker.stop()
     await cache_service.close()
     if agent._connection_pool:
         await agent._connection_pool.close()

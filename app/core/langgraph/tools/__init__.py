@@ -6,7 +6,15 @@
 
 from langchain_core.tools.base import BaseTool
 
+from .agent_runtime import build_agent_runtime_tools, build_mcp_runtime_tools
 from .ask_human import ask_human
 from .duckduckgo_search import duckduckgo_search_tool
 
-tools: list[BaseTool] = [duckduckgo_search_tool, ask_human]
+tools: list[BaseTool] = [duckduckgo_search_tool, ask_human, *build_agent_runtime_tools()]
+
+
+async def refresh_runtime_tools() -> list[BaseTool]:
+    """刷新包含 MCP discovered tools 的工具池."""
+    global tools
+    tools = [duckduckgo_search_tool, ask_human, *build_agent_runtime_tools(), *await build_mcp_runtime_tools()]
+    return tools

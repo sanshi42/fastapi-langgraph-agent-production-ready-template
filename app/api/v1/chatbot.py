@@ -23,6 +23,7 @@ from app.models.session import Session
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    Message,
     StreamResponse,
 )
 from app.services.session_naming import maybe_name_session
@@ -67,13 +68,21 @@ async def chat(
 
         logger.info("chat_request_processed", session_id=session.id)
 
-        return ChatResponse(messages=result)
+        runtime_status = agent.runtime_status_from_messages(result)
+        return ChatResponse(
+            messages=result,
+            status=runtime_status["status"],
+            approval_id=runtime_status.get("approval_id"),
+            tool_name=runtime_status.get("tool_name"),
+            risk_reason=runtime_status.get("risk_reason"),
+            job_id=runtime_status.get("job_id"),
+        )
     except Exception as e:
         logger.exception("chat_request_failed", session_id=session.id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", responses={200: {"model": StreamResponse}})
 @limiter.limit(settings.RATE_LIMIT_ENDPOINTS["chat_stream"][0])
 async def chat_stream(
     request: Request,
@@ -117,7 +126,19 @@ async def chat_stream(
                     async for chunk in agent.get_stream_response(
                         chat_request.messages, session.id, user_id=str(session.user_id), username=session.username
                     ):
-                        response = StreamResponse(content=chunk, done=False)
+                        runtime_status = agent.runtime_status_from_messages([Message(role="assistant", content=chunk)])
+                        stream_status = (
+                            runtime_status["status"] if runtime_status["status"] == "pending_approval" else "running"
+                        )
+                        response = StreamResponse(
+                            content=chunk,
+                            done=False,
+                            status=stream_status,
+                            approval_id=runtime_status.get("approval_id"),
+                            tool_name=runtime_status.get("tool_name"),
+                            risk_reason=runtime_status.get("risk_reason"),
+                            job_id=runtime_status.get("job_id"),
+                        )
                         yield f"data: {json.dumps(response.model_dump(mode='json'))}\n\n"
 
                 # 发送表示完成的最终消息。

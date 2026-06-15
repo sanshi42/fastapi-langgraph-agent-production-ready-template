@@ -10,6 +10,17 @@ from sqlmodel import SQLModel
 
 from alembic import context
 from app.core.config import settings
+from app.models.agent_runtime import (  # noqa: F401
+    AgentApproval,
+    AgentCron,
+    AgentEvent,
+    AgentJob,
+    AgentMCPServer,
+    AgentMessage,
+    AgentTask,
+    AgentTeammate,
+    AgentWorktree,
+)
 from app.models.session import Session  # noqa: F401
 from app.models.thread import Thread  # noqa: F401
 from app.models.user import User  # noqa: F401

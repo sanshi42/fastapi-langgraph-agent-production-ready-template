@@ -152,6 +152,26 @@ class Settings:
         self.MAX_LLM_CALL_RETRIES = int(os.getenv("MAX_LLM_CALL_RETRIES", "3"))
         self.LLM_TOTAL_TIMEOUT = int(os.getenv("LLM_TOTAL_TIMEOUT", "60"))
 
+        # Agent runtime 配置。
+        project_root = Path(__file__).resolve().parents[2]
+        self.AGENT_WORKSPACE_ROOT = Path(os.getenv("AGENT_WORKSPACE_ROOT", str(project_root))).resolve()
+        self.AGENT_MAX_OUTPUT_CHARS = int(os.getenv("AGENT_MAX_OUTPUT_CHARS", "100000"))
+        self.AGENT_TOOL_APPROVAL_ENABLED = os.getenv("AGENT_TOOL_APPROVAL_ENABLED", "true").lower() in (
+            "true",
+            "1",
+            "t",
+            "yes",
+        )
+        self.AGENT_JOB_LEASE_SECONDS = int(os.getenv("AGENT_JOB_LEASE_SECONDS", "60"))
+        self.AGENT_WORKER_ENABLED = os.getenv("AGENT_WORKER_ENABLED", "true").lower() in ("true", "1", "t", "yes")
+        self.AGENT_MCP_CONFIG_PATH = Path(os.getenv("AGENT_MCP_CONFIG_PATH", "")).expanduser()
+        self.AGENT_SKILLS_DIR = Path(
+            os.getenv("AGENT_SKILLS_DIR", str(self.AGENT_WORKSPACE_ROOT / "skills"))
+        ).resolve()
+        self.AGENT_PROJECT_MEMORY_DIR = Path(
+            os.getenv("AGENT_PROJECT_MEMORY_DIR", str(self.AGENT_WORKSPACE_ROOT / ".memory"))
+        ).resolve()
+
         # 长期记忆配置。
         self.LONG_TERM_MEMORY_MODEL = os.getenv("LONG_TERM_MEMORY_MODEL", "gpt-5-nano")
         self.LONG_TERM_MEMORY_EMBEDDER_MODEL = os.getenv("LONG_TERM_MEMORY_EMBEDDER_MODEL", "text-embedding-3-small")

@@ -48,6 +48,23 @@ cp .env.example .env.development
 
 ---
 
+## Agent Runtime
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `AGENT_WORKSPACE_ROOT` | 当前项目根目录 | Agent 被授权操作的服务端工作区 |
+| `AGENT_MAX_OUTPUT_CHARS` | `100000` | 文件、shell 和 runtime 工具结果最大字符数 |
+| `AGENT_TOOL_APPROVAL_ENABLED` | `true` | 敏感工具执行前是否启用 LangGraph interrupt 审批 |
+| `AGENT_JOB_LEASE_SECONDS` | `60` | 后台 runtime job lease 有效秒数 |
+| `AGENT_WORKER_ENABLED` | `true` | 是否启用应用内 runtime worker |
+| `AGENT_MCP_CONFIG_PATH` | `` | MCP server 配置文件路径 |
+| `AGENT_SKILLS_DIR` | `$AGENT_WORKSPACE_ROOT/skills` | workspace 本地 skill 目录 |
+| `AGENT_PROJECT_MEMORY_DIR` | `$AGENT_WORKSPACE_ROOT/.memory` | workspace project memory 目录 |
+
+`AGENT_MCP_CONFIG_PATH` 指向 JSON 文件，顶层可使用 `servers` 或 `mcpServers`。每个 server 支持 `transport=stdio`（`command`、`args`、`env`）或 `transport=streamable_http`（`url`）。
+
+---
+
 ## 数据库
 
 | 变量 | 默认值 | 说明 |

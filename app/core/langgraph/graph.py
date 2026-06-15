@@ -1,9 +1,12 @@
 """LangGraph Agent/workflow 以及与 LLM 交互的实现."""
 
+import ast
 import asyncio
 from typing import (
     AsyncGenerator,
     Optional,
+    Literal,
+    TypedDict,
     cast,
 )
 from urllib.parse import quote_plus
@@ -30,6 +33,7 @@ from langgraph.graph.state import (
 from langgraph.types import (
     RetryPolicy,
     StateSnapshot,
+    interrupt,
 )
 from psycopg import (
     AsyncConnection,
@@ -45,7 +49,8 @@ from app.core.config import (
     Environment,
     settings,
 )
-from app.core.langgraph.tools import tools
+from app.agent_runtime.runtime import agent_runtime
+from app.core.langgraph import tools as langgraph_tools
 from app.core.logging import logger
 from app.core.metrics import llm_inference_duration_seconds
 from app.core.observability import langfuse_callback_handler
@@ -66,6 +71,16 @@ from app.utils import (
 PostgresConnPool = AsyncConnectionPool[AsyncConnection[DictRow]]
 
 
+class RuntimeStatusMetadata(TypedDict):
+    """Agent runtime API 状态元数据."""
+
+    status: Literal["completed", "pending_approval", "running", "error"]
+    approval_id: str | None
+    tool_name: str | None
+    risk_reason: str | None
+    job_id: str | None
+
+
 class LangGraphAgent:
     """管理 LangGraph Agent/workflow 以及与 LLM 的交互.
 
@@ -77,8 +92,8 @@ class LangGraphAgent:
         """使用必要组件初始化 LangGraph Agent."""
         # 使用已绑定工具的 LLM service。
         self.llm_service = llm_service
-        self.llm_service.bind_tools(tools)
-        self.tools_by_name = {tool.name: tool for tool in tools}
+        self.llm_service.bind_tools(langgraph_tools.tools)
+        self.tools_by_name = {tool.name: tool for tool in langgraph_tools.tools}
         self._connection_pool: Optional[PostgresConnPool] = None
         self._graph: Optional[CompiledStateGraph] = None
         logger.info(
@@ -146,7 +161,11 @@ class LangGraphAgent:
 
         username = config.get("metadata", {}).get("username")
         thread_id = config.get("configurable", {}).get("thread_id")
-        SYSTEM_PROMPT = load_system_prompt(username=username, long_term_memory=state.long_term_memory)
+        SYSTEM_PROMPT = load_system_prompt(
+            username=username,
+            long_term_memory=state.long_term_memory,
+            agent_runtime_context=_format_runtime_context(agent_runtime.prompt_context()),
+        )
 
         # 拼接 system prompt 和对话消息。
         messages = prepare_messages(state.messages, SYSTEM_PROMPT)
@@ -195,10 +214,56 @@ class LangGraphAgent:
         tool_calls = state.messages[-1].tool_calls
 
         async def _execute_tool(tool_call: dict) -> ToolMessage:
-            tool_result = await self.tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+            decision = agent_runtime.evaluate_tool(tool_name, tool_args)
+            if decision.denied:
+                tool_result = f"tool execution denied: {decision.reason}"
+            elif decision.requires_approval:
+                approval_id = 0
+                try:
+                    approval = await asyncio.to_thread(
+                        agent_runtime.store.create_approval,
+                        agent_runtime.user_id,
+                        agent_runtime.session_id,
+                        tool_name,
+                        tool_args,
+                        decision.reason,
+                    )
+                    approval_id = approval.id or 0
+                except Exception as approval_error:
+                    logger.exception(
+                        "agent_runtime_approval_create_failed",
+                        error=str(approval_error),
+                        session_id=agent_runtime.session_id,
+                        tool_name=tool_name,
+                    )
+                approval_payload = {
+                    "status": "pending_approval",
+                    "approval_id": f"approval-{approval_id}" if approval_id else "approval-transient",
+                    "tool_name": tool_name,
+                    "tool_args": tool_args,
+                    "risk_reason": decision.reason,
+                }
+                approval_response = interrupt(approval_payload)
+                approved = _is_approval_granted(str(approval_response))
+                if approval_id:
+                    await asyncio.to_thread(
+                        agent_runtime.store.decide_approval,
+                        agent_runtime.user_id,
+                        agent_runtime.session_id,
+                        approval_id,
+                        "approved" if approved else "denied",
+                    )
+                if approved:
+                    tool_result = await self.tools_by_name[tool_name].ainvoke(tool_args)
+                else:
+                    tool_result = f"tool execution denied by user: {decision.reason}"
+            else:
+                tool_result = await self.tools_by_name[tool_name].ainvoke(tool_args)
             return ToolMessage(
                 content=tool_result,
-                name=tool_call["name"],
+                name=tool_name,
                 tool_call_id=tool_call["id"],
             )
 
@@ -218,6 +283,13 @@ class LangGraphAgent:
         """
         if self._graph is None:
             try:
+                try:
+                    active_tools = await langgraph_tools.refresh_runtime_tools()
+                    self.llm_service.bind_tools(active_tools)
+                    self.tools_by_name = {tool.name: tool for tool in active_tools}
+                except Exception as mcp_error:
+                    logger.exception("agent_runtime_tool_refresh_failed", error=str(mcp_error))
+
                 graph_builder = StateGraph(GraphState)
                 graph_builder.add_node("chat", self._chat, destinations=("tool_call", END))
                 graph_builder.add_node(
@@ -273,6 +345,29 @@ class LangGraphAgent:
             raise RuntimeError("graph initialization failed")
         return self._graph
 
+    @staticmethod
+    def runtime_status_from_messages(messages: list[Message]) -> RuntimeStatusMetadata:
+        """从 assistant 消息中提取 Agent runtime 状态元数据."""
+        if not messages:
+            return _completed_runtime_status()
+
+        content = messages[-1].content
+        try:
+            payload = ast.literal_eval(content)
+        except (SyntaxError, ValueError):
+            return _completed_runtime_status()
+
+        if not isinstance(payload, dict) or payload.get("status") != "pending_approval":
+            return _completed_runtime_status()
+
+        return {
+            "status": "pending_approval",
+            "approval_id": str(payload.get("approval_id") or ""),
+            "tool_name": str(payload.get("tool_name") or ""),
+            "risk_reason": str(payload.get("risk_reason") or ""),
+            "job_id": str(payload.get("job_id") or "") or None,
+        }
+
     async def get_response(
         self,
         messages: list[Message],
@@ -304,6 +399,7 @@ class LangGraphAgent:
                 "debug": settings.DEBUG,
             },
         }
+        agent_runtime.bind_scope(user_id, session_id)
 
         try:
             # 并发执行状态检查和 memory search，节省 200-500ms。
@@ -374,6 +470,7 @@ class LangGraphAgent:
                 "debug": settings.DEBUG,
             },
         }
+        agent_runtime.bind_scope(user_id, session_id)
         graph = await self._get_graph()
 
         try:
@@ -480,3 +577,24 @@ class LangGraphAgent:
                 error=str(e),
             )
             raise
+
+
+def _is_approval_granted(value: str) -> bool:
+    """判断用户 resume 输入是否批准执行工具."""
+    return value.strip().lower() in {"approve", "approved", "allow", "allowed", "yes", "y", "同意", "批准"}
+
+
+def _completed_runtime_status() -> RuntimeStatusMetadata:
+    """返回 completed runtime 状态默认值."""
+    return {
+        "status": "completed",
+        "approval_id": None,
+        "tool_name": None,
+        "risk_reason": None,
+        "job_id": None,
+    }
+
+
+def _format_runtime_context(context: dict[str, object]) -> str:
+    """把 Agent runtime context 渲染成 system prompt 片段."""
+    return "\n".join(f"- {key}: {value}" for key, value in context.items())

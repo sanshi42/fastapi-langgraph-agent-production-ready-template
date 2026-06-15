@@ -72,9 +72,22 @@ class ChatResponse(BaseResponse):
 
     Attributes:
         messages: 对话中的消息列表。
+        status: Agent runtime 的结构化状态。
+        approval_id: 等待用户审批的记录 ID。
+        tool_name: 触发审批或运行状态的工具名。
+        risk_reason: 工具命中审批策略的原因。
+        job_id: 后台 runtime job ID。
     """
 
     messages: List[Message] = Field(..., description="对话中的消息列表")
+    status: Literal["completed", "pending_approval", "running", "error"] = Field(
+        default="completed",
+        description="Agent runtime 状态",
+    )
+    approval_id: str | None = Field(default=None, description="待审批记录 ID")
+    tool_name: str | None = Field(default=None, description="相关工具名")
+    risk_reason: str | None = Field(default=None, description="审批或风险原因")
+    job_id: str | None = Field(default=None, description="后台 runtime job ID")
 
 
 class StreamResponse(BaseResponse):
@@ -87,6 +100,14 @@ class StreamResponse(BaseResponse):
 
     content: str = Field(default="", description="当前 chunk 内容")
     done: bool = Field(default=False, description="流是否已结束")
+    status: Literal["completed", "pending_approval", "running", "error"] = Field(
+        default="running",
+        description="Agent runtime 状态",
+    )
+    approval_id: str | None = Field(default=None, description="待审批记录 ID")
+    tool_name: str | None = Field(default=None, description="相关工具名")
+    risk_reason: str | None = Field(default=None, description="审批或风险原因")
+    job_id: str | None = Field(default=None, description="后台 runtime job ID")
 
 
 class SessionTitle(BaseModel):
