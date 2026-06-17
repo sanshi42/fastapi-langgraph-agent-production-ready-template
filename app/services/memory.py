@@ -36,12 +36,12 @@ class MemoryService:
                         },
                     },
                     "llm": {
-                        "provider": "openai",
-                        "config": {"model": settings.LONG_TERM_MEMORY_MODEL},
+                        "provider": settings.LONG_TERM_MEMORY_LLM_PROVIDER,
+                        "config": _llm_config(),
                     },
                     "embedder": {
-                        "provider": "openai",
-                        "config": {"model": settings.LONG_TERM_MEMORY_EMBEDDER_MODEL},
+                        "provider": settings.LONG_TERM_MEMORY_EMBEDDER_PROVIDER,
+                        "config": _embedder_config(),
                     },
                 }
             )
@@ -56,6 +56,9 @@ class MemoryService:
         启动时调用一次，避免首次 search() 或 add() 承担约 130ms 的
         from_config + pgvector.list_cols() 冷启动成本。
         """
+        if not settings.LONG_TERM_MEMORY_ENABLED:
+            logger.info("memory_service_disabled")
+            return
         await self._get_memory()
         logger.info("memory_service_initialized")
 
@@ -67,6 +70,8 @@ class MemoryService:
         返回格式化后的 memory 字符串。失败或未提供 user_id 时返回空字符串；
         匿名 session 会跳过长期记忆，避免落入共享分区。
         """
+        if not settings.LONG_TERM_MEMORY_ENABLED:
+            return ""
         if user_id is None:
             return ""
         try:
@@ -95,6 +100,8 @@ class MemoryService:
 
         ``user_id`` 为 ``None`` 时不执行操作，原因见 ``search``。
         """
+        if not settings.LONG_TERM_MEMORY_ENABLED:
+            return
         if user_id is None:
             return
         try:
@@ -106,3 +113,49 @@ class MemoryService:
 
 
 memory_service = MemoryService()
+
+
+def _llm_config() -> dict[str, object]:
+    """返回 mem0 LLM provider 配置."""
+    config: dict[str, object] = {
+        "model": settings.LONG_TERM_MEMORY_MODEL,
+        "api_key": settings.LONG_TERM_MEMORY_API_KEY,
+    }
+    _set_base_url(
+        config,
+        provider=settings.LONG_TERM_MEMORY_LLM_PROVIDER,
+        base_url=settings.LONG_TERM_MEMORY_BASE_URL,
+    )
+    return config
+
+
+def _embedder_config() -> dict[str, object]:
+    """返回 mem0 embedding provider 配置."""
+    config: dict[str, object] = {
+        "model": settings.LONG_TERM_MEMORY_EMBEDDER_MODEL,
+        "api_key": settings.LONG_TERM_MEMORY_EMBEDDER_API_KEY,
+    }
+    _set_base_url(
+        config,
+        provider=settings.LONG_TERM_MEMORY_EMBEDDER_PROVIDER,
+        base_url=settings.LONG_TERM_MEMORY_EMBEDDER_BASE_URL,
+    )
+    return config
+
+
+def _set_base_url(config: dict[str, object], *, provider: str, base_url: str) -> None:
+    """按 mem0 provider 使用的字段名设置 base URL."""
+    if not base_url:
+        return
+
+    match provider:
+        case "openai":
+            config["openai_base_url"] = base_url
+        case "deepseek":
+            config["deepseek_base_url"] = base_url
+        case "ollama":
+            config["ollama_base_url"] = base_url
+        case "lmstudio":
+            config["lmstudio_base_url"] = base_url
+        case _:
+            logger.warning("memory_provider_base_url_ignored", provider=provider)

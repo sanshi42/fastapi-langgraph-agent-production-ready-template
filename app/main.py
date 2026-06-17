@@ -2,6 +2,7 @@
 
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import (
@@ -11,9 +12,13 @@ from fastapi import (
 )
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
+from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+import uvicorn
 
 from asgi_correlation_id import CorrelationIdMiddleware
 
@@ -33,6 +38,10 @@ from app.core.observability import langfuse_init
 from app.agent_runtime.worker import agent_runtime_worker
 from app.services.database import database_service
 from app.services.memory import memory_service
+
+FRONTEND_DIST_DIR = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+FRONTEND_INDEX = FRONTEND_DIST_DIR / "index.html"
+FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
 
 # 加载环境变量。
 load_dotenv()
@@ -160,12 +169,18 @@ app.add_middleware(
 # 挂载 API router。
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+if FRONTEND_ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_ASSETS_DIR), name="frontend-assets")
 
-@app.get("/")
+
+@app.get("/", response_model=None)
 @limiter.limit(settings.RATE_LIMIT_ENDPOINTS["root"][0])
-async def root(request: Request):
-    """返回基础 API 信息的根端点."""
+async def root(request: Request) -> Response | dict[str, str]:
+    """返回 React SPA 入口；未构建前端时返回基础 API 信息."""
     logger.info("root_endpoint_called")
+    if FRONTEND_INDEX.exists():
+        return FileResponse(FRONTEND_INDEX)
+
     return {
         "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
@@ -202,3 +217,23 @@ async def health_check(request: Request) -> JSONResponse:
     status_code = status.HTTP_200_OK if db_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return JSONResponse(content=response, status_code=status_code)
+
+
+@app.get("/{spa_path:path}", response_model=None)
+@limiter.limit(settings.RATE_LIMIT_ENDPOINTS["root"][0])
+async def spa_fallback(request: Request, spa_path: str) -> Response:
+    """让前端路由刷新时回退到 React SPA."""
+    if spa_path.startswith(("api/", "docs", "redoc", "health", "metrics", "assets/")):
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Not Found"})
+
+    static_file = FRONTEND_DIST_DIR / spa_path
+    if static_file.exists() and static_file.is_file():
+        return FileResponse(static_file)
+
+    if FRONTEND_INDEX.exists():
+        return FileResponse(FRONTEND_INDEX)
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": "frontend build not found"})
+
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

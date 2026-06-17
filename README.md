@@ -54,6 +54,7 @@ docker compose --env-file .env.development exec app uv run alembic upgrade head
 
 确认服务可用：
 
+- Agent Console：[http://localhost:8000/](http://localhost:8000/)
 - API 文档：[http://localhost:8000/docs](http://localhost:8000/docs)
 - 健康检查：[http://localhost:8000/health](http://localhost:8000/health)
 
@@ -67,6 +68,7 @@ docker compose --env-file .env.development exec app uv run alembic upgrade head
 | 加工具 | `app/core/langgraph/tools/` | 新增 LangChain tool 后，在 `app/core/langgraph/tools/__init__.py` 的 `tools` 列表注册。 |
 | 改模型和 fallback 顺序 | `app/services/llm/registry.py` | `DEFAULT_LLM_MODEL` 控制起始模型，registry 控制候选模型列表。 |
 | 改 API 路由 | `app/api/v1/` | `auth.py` 管认证，`chatbot.py` 管聊天接口，`api.py` 汇总 router。 |
+| 改前端 Console | `frontend/` | React + TypeScript 前端，构建后由 FastAPI 在 `/` 托管。 |
 | 改数据库模型 | `app/models/` | 新增或修改 SQLModel 后，用 `make migration MSG="..."` 生成迁移。 |
 | 改请求/响应结构 | `app/schemas/` | Pydantic schema 放在这里，接口入参和返回值都应先建模。 |
 | 改环境配置 | `.env.development`、`app/core/config.py` | 本地值写 `.env.development`；新增配置项时再同步到 `config.py`。 |
@@ -157,6 +159,19 @@ OPENAI_BASE_URL=https://provider.example.com/v1
 ### 长期记忆需要单独申请 mem0 账号吗？
 
 不需要。mem0 在应用进程内运行，记忆数据保存在 PostgreSQL + pgvector 里。它仍然会调用 LLM 和 embedding 模型，所以 `OPENAI_API_KEY` 需要可用。
+
+如果主聊天使用的第三方 provider 不支持 embeddings，可以先关闭长期记忆：
+
+```dotenv
+LONG_TERM_MEMORY_ENABLED=false
+```
+
+也可以为长期记忆单独配置支持 embeddings 的 provider：
+
+```dotenv
+LONG_TERM_MEMORY_EMBEDDER_BASE_URL=https://provider.example.com/v1
+LONG_TERM_MEMORY_EMBEDDER_MODEL=text-embedding-3-small
+```
 
 ### API 起不来怎么办？
 

@@ -60,6 +60,44 @@ def test_store_records_and_decides_approvals():
     assert decided.decided_at is not None
 
 
+def test_store_lists_approvals_by_user_and_session():
+    """Approval 列表查询必须按 user_id + session_id 隔离."""
+    store = _store()
+    first = store.create_approval(
+        user_id=7,
+        session_id="s1",
+        tool_name="write_file",
+        tool_args={"path": "a.txt"},
+        risk_reason="write_file modifies workspace files",
+    )
+    second = store.create_approval(
+        user_id=7,
+        session_id="s1",
+        tool_name="bash",
+        tool_args={"command": "npm run build"},
+        risk_reason="bash may change workspace state",
+    )
+    store.create_approval(
+        user_id=8,
+        session_id="s1",
+        tool_name="write_file",
+        tool_args={"path": "hidden.txt"},
+        risk_reason="write_file modifies workspace files",
+    )
+    store.create_approval(
+        user_id=7,
+        session_id="s2",
+        tool_name="write_file",
+        tool_args={"path": "other.txt"},
+        risk_reason="write_file modifies workspace files",
+    )
+
+    approvals = store.list_approvals(user_id=7, session_id="s1")
+
+    assert [approval.id for approval in approvals] == [second.id, first.id]
+    assert [approval.tool_name for approval in approvals] == ["bash", "write_file"]
+
+
 def test_store_claims_only_expired_or_pending_jobs_once():
     """Lease claim 应避免多个 worker 认领同一个未过期 job."""
     store = _store()

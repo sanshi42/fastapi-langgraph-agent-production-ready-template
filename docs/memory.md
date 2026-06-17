@@ -56,10 +56,17 @@ LLM 生成响应后，memories 会通过 `asyncio.create_task` **在后台**更�
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
+| `LONG_TERM_MEMORY_ENABLED` | `true` | 是否启用长期记忆 |
 | `LONG_TERM_MEMORY_COLLECTION_NAME` | `longterm_memory` | pgvector collection 名称 |
-| `LONG_TERM_MEMORY_MODEL` | `gpt-5-nano` | mem0 用于提取和处理 memories 的 LLM |
+| `LONG_TERM_MEMORY_LLM_PROVIDER` | `openai` | mem0 提取 memories 使用的 LLM provider |
+| `LONG_TERM_MEMORY_MODEL` | `DEFAULT_LLM_MODEL` | mem0 用于提取和处理 memories 的 LLM |
+| `LONG_TERM_MEMORY_BASE_URL` | `OPENAI_BASE_URL` | 长期记忆 LLM 的 OpenAI-compatible endpoint |
+| `LONG_TERM_MEMORY_EMBEDDER_PROVIDER` | `openai` | 语义搜索使用的 embedding provider |
 | `LONG_TERM_MEMORY_EMBEDDER_MODEL` | `text-embedding-3-small` | 语义搜索使用的 embedding 模型 |
+| `LONG_TERM_MEMORY_EMBEDDER_BASE_URL` | `OPENAI_BASE_URL` | embedding provider 的 OpenAI-compatible endpoint |
 | `CACHE_TTL_SECONDS` | `60` | Memory search 缓存 TTL |
+
+如果主聊天 provider 不支持 embeddings，可以设置 `LONG_TERM_MEMORY_ENABLED=false` 先关闭长期记忆；或者用 `LONG_TERM_MEMORY_EMBEDDER_*` 单独指定支持 embeddings 的 provider。
 
 ## 启动预热
 

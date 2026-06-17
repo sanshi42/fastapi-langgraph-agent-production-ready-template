@@ -15,9 +15,11 @@ wheels/
 .env.development*
 .env.staging*
 .env.production*
+.env*.local
 
 # Misc
 *.ipynb
+.superpowers/
 
 # Reports
 evals/reports/

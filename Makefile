@@ -92,6 +92,21 @@ typecheck:
 check: lint typecheck
 	@echo "所有检查通过"
 
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
+
+frontend-lint:
+	cd frontend && npm run lint
+
+frontend-test:
+	cd frontend && npm run test
+
 pre-commit:
 	uv run pre-commit run --all-files
 
@@ -184,6 +199,11 @@ help:
 	@echo "  format               运行 Ruff format"
 	@echo "  typecheck            运行 Pyright 静态类型检查"
 	@echo "  check                运行 lint 和 typecheck"
+	@echo "  frontend-install     安装前端依赖"
+	@echo "  frontend-dev         启动前端 Vite 开发服务"
+	@echo "  frontend-build       构建前端静态资源"
+	@echo "  frontend-lint        运行前端 ESLint"
+	@echo "  frontend-test        运行前端单元测试"
 	@echo "  pre-commit           运行全部 pre-commit hooks"
 	@echo "  pre-commit-update    更新 pre-commit hook 版本"
 	@echo ""
@@ -207,7 +227,8 @@ help:
 .PHONY: install dev staging prod _serve \
         migrate migration migrate-downgrade migrate-history \
         eval eval-quick eval-no-report \
-        lint format typecheck check pre-commit pre-commit-update \
+        lint format typecheck check frontend-install frontend-dev frontend-build frontend-lint frontend-test \
+        pre-commit pre-commit-update \
         docker-build docker-up docker-down docker-logs docker-migrate \
         docker-migrate-downgrade docker-migrate-history \
         stack-up stack-down stack-logs \

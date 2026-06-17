@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-17T19:32:08+08:00",
+  "title": "Design System: my-agent Console",
+  "extensions": {
+    "colorMeta": {
+      "console-background": {
+        "role": "neutral",
+        "displayName": "Console Background",
+        "canonical": "oklch(0.13 0.026 258)",
+        "tonalRamp": [
+          "oklch(0.15 0.026 258)",
+          "oklch(0.25 0.026 258)",
+          "oklch(0.35 0.026 258)",
+          "oklch(0.45 0.026 258)",
+          "oklch(0.58 0.026 258)",
+          "oklch(0.72 0.026 258)",
+          "oklch(0.84 0.026 258)",
+          "oklch(0.95 0.026 258)"
+        ]
+      },
+      "glass-surface": {
+        "role": "neutral",
+        "displayName": "Glass Surface",
+        "canonical": "oklch(0.2 0.036 258 / 0.72)",
+        "tonalRamp": [
+          "oklch(0.15 0.036 258)",
+          "oklch(0.25 0.036 258)",
+          "oklch(0.35 0.036 258)",
+          "oklch(0.45 0.036 258)",
+          "oklch(0.58 0.036 258)",
+          "oklch(0.72 0.036 258)",
+          "oklch(0.84 0.036 258)",
+          "oklch(0.95 0.036 258)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Foreground",
+        "canonical": "oklch(0.96 0.012 248)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 248)",
+          "oklch(0.25 0.012 248)",
+          "oklch(0.35 0.012 248)",
+          "oklch(0.45 0.012 248)",
+          "oklch(0.58 0.012 248)",
+          "oklch(0.72 0.012 248)",
+          "oklch(0.84 0.012 248)",
+          "oklch(0.95 0.012 248)"
+        ]
+      },
+      "signal-teal": {
+        "role": "primary",
+        "displayName": "Signal Teal",
+        "canonical": "oklch(0.78 0.15 183)",
+        "tonalRamp": [
+          "oklch(0.15 0.15 183)",
+          "oklch(0.25 0.15 183)",
+          "oklch(0.35 0.15 183)",
+          "oklch(0.45 0.15 183)",
+          "oklch(0.58 0.15 183)",
+          "oklch(0.72 0.15 183)",
+          "oklch(0.84 0.15 183)",
+          "oklch(0.95 0.15 183)"
+        ]
+      },
+      "danger-red": {
+        "role": "secondary",
+        "displayName": "Danger Red",
+        "canonical": "oklch(0.66 0.22 25)",
+        "tonalRamp": [
+          "oklch(0.15 0.22 25)",
+          "oklch(0.25 0.22 25)",
+          "oklch(0.35 0.22 25)",
+          "oklch(0.45 0.22 25)",
+          "oklch(0.58 0.22 25)",
+          "oklch(0.72 0.22 25)",
+          "oklch(0.84 0.22 25)",
+          "oklch(0.95 0.22 25)"
+        ]
+      },
+      "runtime-amber": {
+        "role": "tertiary",
+        "displayName": "Runtime Amber",
+        "canonical": "oklch(0.82 0.15 82)",
+        "tonalRamp": [
+          "oklch(0.15 0.15 82)",
+          "oklch(0.25 0.15 82)",
+          "oklch(0.35 0.15 82)",
+          "oklch(0.45 0.15 82)",
+          "oklch(0.58 0.15 82)",
+          "oklch(0.72 0.15 82)",
+          "oklch(0.84 0.15 82)",
+          "oklch(0.95 0.15 82)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Auth and panel-level headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, compact component titles, and labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Messages, helper text, runtime details, and prose-like UI copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Message roles, compact state labels, and metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "glass-inner-highlight",
+        "value": "inset 0 1px 0 oklch(1 0 0 / 0.14), inset 0 -1px 0 oklch(0 0 0 / 0.18)",
+        "purpose": "Standard panel material for glass containers."
+      },
+      {
+        "name": "brand-mark-glow",
+        "value": "0 0 42px oklch(0.78 0.15 183 / 0.28)",
+        "purpose": "Reserved for the bot mark only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "loading-spin",
+        "value": "spin 1s linear infinite",
+        "purpose": "Busy indicator on auth and refresh icons."
+      },
+      {
+        "name": "reduced-motion-reset",
+        "value": "animation-duration: 0.01ms; transition-duration: 0.01ms",
+        "purpose": "Global reduced-motion fallback."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "rail-collapse",
+        "value": "1120px",
+        "purpose": "Collapse the three-column console to sidebar plus content, with runtime rail below chat."
+      },
+      {
+        "name": "stacked-mobile",
+        "value": "760px",
+        "purpose": "Stack the shell vertically and allow messages to use full width."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action for login, send, and approval confirmation.",
+      "html": "<button class=\"ds-button-primary\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/></svg><span>Approve</span></button>",
+      "css": ".ds-button-primary { min-height: 44px; border: 0; border-radius: var(--radius-md, 12px); display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; font: 800 1rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif; color: oklch(0.1 0.03 260); background: linear-gradient(135deg, var(--color-accent, oklch(0.78 0.15 183)), oklch(0.72 0.16 220)); cursor: pointer; } .ds-button-primary svg { width: 18px; height: 18px; } .ds-button-primary:focus-visible { outline: 3px solid oklch(0.78 0.15 183 / 0.8); outline-offset: 3px; } .ds-button-primary:disabled { cursor: not-allowed; opacity: 0.58; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action for reject and logout flows.",
+      "html": "<button class=\"ds-button-danger\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M18 6 6 18M6 6l12 12\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/></svg><span>Reject</span></button>",
+      "css": ".ds-button-danger { min-height: 44px; border: 0; border-radius: var(--radius-md, 12px); display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; font: 800 1rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif; color: oklch(0.98 0.01 25); background: oklch(0.44 0.16 25 / 0.76); cursor: pointer; } .ds-button-danger svg { width: 18px; height: 18px; } .ds-button-danger:focus-visible { outline: 3px solid oklch(0.78 0.15 183 / 0.8); outline-offset: 3px; } .ds-button-danger:disabled { cursor: not-allowed; opacity: 0.58; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Compact square affordance for refresh and create-session actions.",
+      "html": "<button class=\"ds-button-icon\" aria-label=\"Refresh\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M21 12a9 9 0 0 1-15.3 6.4L3 16m0 0v5h5M3 12A9 9 0 0 1 18.3 5.6L21 8m0 0V3h-5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/></svg></button>",
+      "css": ".ds-button-icon { display: grid; width: 44px; min-height: 44px; place-items: center; border: 0; border-radius: var(--radius-md, 12px); color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(1 0 0 / 0.08); cursor: pointer; } .ds-button-icon svg { width: 18px; height: 18px; } .ds-button-icon:hover { background: oklch(1 0 0 / 0.1); } .ds-button-icon:focus-visible { outline: 3px solid oklch(0.78 0.15 183 / 0.8); outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Dark recessed form field for auth and composition contexts.",
+      "html": "<label class=\"ds-field\"><span>Email</span><input type=\"email\" value=\"you@example.com\" /></label>",
+      "css": ".ds-field { display: grid; gap: 8px; color: var(--color-foreground, oklch(0.96 0.012 248)); font: 650 1rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif; } .ds-field input { width: 100%; min-height: 46px; border: 1px solid var(--color-border, oklch(0.94 0.018 248 / 0.16)); border-radius: var(--radius-md, 12px); padding: 0 14px; color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(0.11 0.03 260 / 0.72); font: inherit; } .ds-field input:focus-visible { outline: 3px solid oklch(0.78 0.15 183 / 0.8); outline-offset: 3px; }"
+    },
+    {
+      "name": "Glass Panel",
+      "kind": "card",
+      "refersTo": "panel-glass",
+      "description": "Standard container for sidebar, chat panel, runtime rail, settings panel, and auth card.",
+      "html": "<section class=\"ds-glass-panel\"><p class=\"ds-eyebrow\">Runtime</p><h2>Session state</h2><p>Approvals, jobs, tasks, and worktrees stay visible without overpowering chat.</p></section>",
+      "css": ".ds-glass-panel { border: 1px solid var(--color-border, oklch(0.94 0.018 248 / 0.16)); border-radius: 20px; padding: 18px; color: var(--color-foreground, oklch(0.96 0.012 248)); background: linear-gradient(145deg, oklch(1 0 0 / 0.1), oklch(1 0 0 / 0.04)), var(--color-surface, oklch(0.2 0.036 258 / 0.72)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14), inset 0 -1px 0 oklch(0 0 0 / 0.18); backdrop-filter: blur(var(--glass-blur, 24px)) saturate(150%); font: 400 1rem/1.62 Inter, ui-sans-serif, system-ui, sans-serif; } .ds-glass-panel h2 { margin: 0; font-size: 1.2rem; line-height: 1.25; } .ds-glass-panel p { margin: 8px 0 0; color: var(--color-muted, oklch(0.76 0.03 248)); } .ds-eyebrow { margin: 0 0 6px; color: var(--color-accent, oklch(0.78 0.15 183)); font-size: 0.78rem; font-weight: 700; }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Left-rail navigation and session selection vocabulary.",
+      "html": "<button class=\"ds-nav-item ds-nav-item-active\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/></svg><span>Console</span></button>",
+      "css": ".ds-nav-item { min-height: 44px; border: 0; border-radius: var(--radius-md, 12px); display: flex; align-items: center; gap: 10px; width: 100%; padding: 0 12px; color: var(--color-muted, oklch(0.76 0.03 248)); background: transparent; text-align: left; font: 650 1rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; } .ds-nav-item svg { width: 18px; height: 18px; } .ds-nav-item:hover { color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(1 0 0 / 0.08); } .ds-nav-item-active { color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(1 0 0 / 0.1); } .ds-nav-item:focus-visible { outline: 3px solid oklch(0.78 0.15 183 / 0.8); outline-offset: 3px; }"
+    },
+    {
+      "name": "Message Bubble",
+      "kind": "custom",
+      "refersTo": "message-bubble",
+      "description": "Chat transcript bubble for user and assistant turns.",
+      "html": "<article class=\"ds-message ds-message-assistant\"><div class=\"ds-message-role\">Agent</div><p>Runtime state and approval context stay readable inside the chat flow.</p></article>",
+      "css": ".ds-message { max-width: min(78%, 760px); border: 1px solid var(--color-border, oklch(0.94 0.018 248 / 0.16)); border-radius: 16px; padding: 12px 14px; color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(1 0 0 / 0.06); font: 400 1rem/1.62 Inter, ui-sans-serif, system-ui, sans-serif; } .ds-message-user { margin-left: auto; background: oklch(0.78 0.15 183 / 0.16); } .ds-message-role { margin-bottom: 4px; color: var(--color-accent, oklch(0.78 0.15 183)); font-size: 0.78rem; font-weight: 800; } .ds-message p { margin: 0; white-space: pre-wrap; }"
+    },
+    {
+      "name": "Approval Card",
+      "kind": "custom",
+      "refersTo": "approval-card",
+      "description": "Inline risk surface for pending tool approvals.",
+      "html": "<section class=\"ds-approval-card\" role=\"alert\"><div><p class=\"ds-approval-label\">Pending Approval</p><h2>shell_command</h2><p>Command requires approval because it can modify files.</p></div></section>",
+      "css": ".ds-approval-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid oklch(0.82 0.15 82 / 0.35); border-radius: 16px; padding: 16px; color: var(--color-foreground, oklch(0.96 0.012 248)); background: oklch(0.28 0.08 82 / 0.35); font: 400 1rem/1.62 Inter, ui-sans-serif, system-ui, sans-serif; } .ds-approval-card h2 { margin: 0; font-size: 1.2rem; line-height: 1.25; } .ds-approval-card p { margin: 8px 0 0; color: var(--color-muted, oklch(0.76 0.03 248)); } .ds-approval-label { margin: 0 0 6px !important; color: var(--color-warning, oklch(0.82 0.15 82)) !important; font-size: 0.78rem; font-weight: 700; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet Cockpit",
+    "overview": "my-agent Console is a restrained product interface for developers operating an Agent runtime. The workspace should feel like a quiet cockpit: chat is the center instrument, session state and approval risk live in nearby rails, and every action remains legible under pressure.\n\nThe visual system uses dark Liquid Glass as a material language, not as decoration. Glass panels separate durable work zones, but text, code-like content, error states, and approval reasons always keep higher contrast than the material effect.",
+    "keyCharacteristics": [
+      "Dark, cool console base with one operational teal accent.",
+      "Chat-centered three-column workspace that collapses structurally on smaller screens.",
+      "Glass surfaces with inner highlights, not soft drop-shadow cards.",
+      "High-contrast text and semantic warning/error states.",
+      "Standard controls, Lucide icons, and visible focus states."
+    ],
+    "rules": [
+      {
+        "name": "The Accent Rarity Rule",
+        "body": "Signal Teal is for primary action, active selection, and state indicators only. Do not use it as ambient decoration across inactive surfaces.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Heat Rule",
+        "body": "Amber and red are reserved for approval, warning, error, and destructive flows. Never reuse them for branding flourishes.",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Family Rule",
+        "body": "Product UI uses one tuned sans family. Do not introduce a display or serif font for labels, buttons, data, or runtime status.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed Scale Rule",
+        "body": "Use fixed rem sizes for product surfaces. Avoid fluid clamp() headings inside panels, sidebars, and settings screens.",
+        "section": "typography"
+      },
+      {
+        "name": "The Stable Panel Rule",
+        "body": "Panels use borders, inner highlights, and blur. Do not pair a one-pixel border with a wide decorative drop shadow on cards or buttons.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glass Serves Text Rule",
+        "body": "Backdrop blur is allowed only where foreground text remains comfortably readable.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep chat as the center stage and runtime state as a supporting rail.",
+      "Do use Signal Teal only for primary action, active state, and state indicators.",
+      "Do keep text, code-like content, error messages, and approval reasons high contrast over glass.",
+      "Do use Lucide icons or equivalent line icons with accessible labels for icon-only controls.",
+      "Do collapse layout structurally at 1120px and 760px; do not rely on fluid typography to solve product layout.",
+      "Do respect prefers-reduced-motion and keep motion tied to state feedback."
+    ],
+    "donts": [
+      "Don't make a pure chat skin; it must preserve Agent runtime state, approvals, sessions, jobs, tasks, worktrees, and teammate visibility.",
+      "Don't use full-screen translucent glass that makes code, logs, or long text hard to read.",
+      "Don't turn the console into a heavy operations dashboard where metric cards overpower the chat task.",
+      "Don't add online editing for API keys, model settings, or .env secrets in this settings surface.",
+      "Don't use emoji as structural icons.",
+      "Don't pair one-pixel borders with wide decorative drop shadows, add side-stripe borders, or use gradient text."
+    ]
+  }
+}

@@ -173,7 +173,25 @@ class Settings:
         ).resolve()
 
         # 长期记忆配置。
-        self.LONG_TERM_MEMORY_MODEL = os.getenv("LONG_TERM_MEMORY_MODEL", "gpt-5-nano")
+        self.LONG_TERM_MEMORY_ENABLED = os.getenv("LONG_TERM_MEMORY_ENABLED", "true").lower() in (
+            "true",
+            "1",
+            "t",
+            "yes",
+        )
+        self.LONG_TERM_MEMORY_LLM_PROVIDER = os.getenv("LONG_TERM_MEMORY_LLM_PROVIDER", "openai")
+        self.LONG_TERM_MEMORY_API_KEY = os.getenv("LONG_TERM_MEMORY_API_KEY", self.OPENAI_API_KEY)
+        self.LONG_TERM_MEMORY_BASE_URL = os.getenv("LONG_TERM_MEMORY_BASE_URL", self.OPENAI_BASE_URL)
+        self.LONG_TERM_MEMORY_MODEL = os.getenv("LONG_TERM_MEMORY_MODEL", self.DEFAULT_LLM_MODEL)
+        self.LONG_TERM_MEMORY_EMBEDDER_PROVIDER = os.getenv("LONG_TERM_MEMORY_EMBEDDER_PROVIDER", "openai")
+        self.LONG_TERM_MEMORY_EMBEDDER_API_KEY = os.getenv(
+            "LONG_TERM_MEMORY_EMBEDDER_API_KEY",
+            self.OPENAI_API_KEY,
+        )
+        self.LONG_TERM_MEMORY_EMBEDDER_BASE_URL = os.getenv(
+            "LONG_TERM_MEMORY_EMBEDDER_BASE_URL",
+            self.OPENAI_BASE_URL,
+        )
         self.LONG_TERM_MEMORY_EMBEDDER_MODEL = os.getenv("LONG_TERM_MEMORY_EMBEDDER_MODEL", "text-embedding-3-small")
         self.LONG_TERM_MEMORY_COLLECTION_NAME = os.getenv("LONG_TERM_MEMORY_COLLECTION_NAME", "longterm_memory")
         # JWT 配置。
@@ -216,6 +234,7 @@ class Settings:
             "chat": ["30 per minute"],
             "chat_stream": ["20 per minute"],
             "messages": ["50 per minute"],
+            "runtime_state": ["60 per minute"],
             "register": ["10 per hour"],
             "login": ["20 per minute"],
             "root": ["10 per minute"],

@@ -1,3 +1,13 @@
+FROM node:22-slim AS frontend-builder
+
+WORKDIR /frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.13.2-slim
 
 # 设置工作目录。
@@ -28,6 +38,7 @@ RUN uv sync --frozen --no-install-project
 
 # 复制应用代码，并基于锁定依赖安装项目本身。
 COPY . .
+COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 RUN uv sync --frozen
 
 # 切换用户前先给 entrypoint 脚本添加可执行权限。

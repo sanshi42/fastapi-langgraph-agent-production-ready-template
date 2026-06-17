@@ -1,7 +1,11 @@
 """应用 graph 工具函数."""
 
+from collections.abc import Sequence
+from typing import cast
+
 import tiktoken
 from langchain_core.messages import BaseMessage
+from langchain_core.messages import convert_to_openai_messages
 from langchain_core.messages import trim_messages as _trim_messages
 
 from app.core.config import settings
@@ -39,7 +43,7 @@ def _count_tokens_tiktoken(messages: list) -> int:
     return num_tokens
 
 
-def dump_messages(messages: list[Message]) -> list[dict]:
+def dump_messages(messages: Sequence[Message | BaseMessage | dict]) -> list[dict]:
     """把消息序列化为字典列表.
 
     Args:
@@ -48,7 +52,8 @@ def dump_messages(messages: list[Message]) -> list[dict]:
     Returns:
         list[dict]: 序列化后的消息。
     """
-    return [message.model_dump() for message in messages]
+    normalized = [message.model_dump() if isinstance(message, Message) else message for message in messages]
+    return cast(list[dict], convert_to_openai_messages(normalized))
 
 
 def extract_text_content(content: str | list) -> str:

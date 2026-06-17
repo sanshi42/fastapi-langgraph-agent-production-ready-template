@@ -42,9 +42,16 @@ cp .env.example .env.development
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
+| `LONG_TERM_MEMORY_ENABLED` | `true` | 是否启用长期记忆 |
 | `LONG_TERM_MEMORY_COLLECTION_NAME` | `longterm_memory` | pgvector collection 名称 |
-| `LONG_TERM_MEMORY_MODEL` | `gpt-5-nano` | mem0 用于提取记忆的 LLM |
+| `LONG_TERM_MEMORY_LLM_PROVIDER` | `openai` | mem0 提取记忆使用的 LLM provider |
+| `LONG_TERM_MEMORY_MODEL` | `DEFAULT_LLM_MODEL` | mem0 用于提取记忆的 LLM |
+| `LONG_TERM_MEMORY_BASE_URL` | `OPENAI_BASE_URL` | 长期记忆 LLM endpoint |
+| `LONG_TERM_MEMORY_EMBEDDER_PROVIDER` | `openai` | 语义搜索使用的 embedding provider |
 | `LONG_TERM_MEMORY_EMBEDDER_MODEL` | `text-embedding-3-small` | 语义搜索使用的 embedding 模型 |
+| `LONG_TERM_MEMORY_EMBEDDER_BASE_URL` | `OPENAI_BASE_URL` | embedding endpoint |
+
+使用第三方 provider 时，如果它只支持 chat completions、不支持 embeddings，请设置 `LONG_TERM_MEMORY_ENABLED=false`，或把 `LONG_TERM_MEMORY_EMBEDDER_*` 指向支持 embeddings 的服务。
 
 ---
 

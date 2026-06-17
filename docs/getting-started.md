@@ -103,7 +103,8 @@ LOG_FORMAT=console
 | `LANGFUSE_TRACING_ENABLED` | 先设为 `false` | 没有 Langfuse 账号也能启动。 |
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | 先不用改 | 只有启用 Langfuse tracing 时才需要。 |
 | `VALKEY_HOST` | 先留空 | 留空时使用进程内缓存；要共享缓存再设为 `valkey`。 |
-| `LONG_TERM_MEMORY_*` | 先保留默认 | 只有要换记忆提取模型、embedding 模型或 collection 名时才改。 |
+| `LONG_TERM_MEMORY_ENABLED` | provider 不支持 embeddings 时先设为 `false` | 长期记忆需要 chat LLM 和 embedding model 都可用。 |
+| `LONG_TERM_MEMORY_*` | 先保留默认 | 只有要换记忆提取模型、embedding 模型、endpoint 或 collection 名时才改。 |
 
 ## 3. 路径 A：用 Docker 启动 API + PostgreSQL
 

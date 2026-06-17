@@ -114,6 +114,16 @@ class AgentRuntimeStore:
             )
             return session.exec(statement).first()
 
+    def list_approvals(self, user_id: int, session_id: str) -> list[AgentApproval]:
+        """列出当前 scope 的审批记录."""
+        with Session(self.engine) as session:
+            statement = (
+                select(AgentApproval)
+                .where(col(AgentApproval.user_id) == user_id, col(AgentApproval.session_id) == session_id)
+                .order_by(col(AgentApproval.id).desc())
+            )
+            return list(session.exec(statement).all())
+
     def decide_approval(
         self,
         user_id: int,
