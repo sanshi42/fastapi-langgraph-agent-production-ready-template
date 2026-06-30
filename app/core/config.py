@@ -5,14 +5,14 @@
 """
 
 import os
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 
 # 定义应用运行环境类型。
-class Environment(str, Enum):
+class Environment(StrEnum):
     """应用运行环境类型.
 
     应用可运行在 development、staging、production 和 test 环境中。

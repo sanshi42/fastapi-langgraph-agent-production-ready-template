@@ -12,9 +12,9 @@ wheels/
 
 # Environment variables
 .env
-.env.development
-.env.staging
-.env.production
+.env.development*
+.env.staging*
+.env.production*
 
 # Misc
 *.ipynb
@@ -23,3 +23,7 @@ wheels/
 evals/reports/
 
 .idea/*
+
+.superpowers/*
+
+**/node_modules/**
